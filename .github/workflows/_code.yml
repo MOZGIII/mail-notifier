@@ -1,0 +1,113 @@
+on:
+  workflow_call:
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  RUSTDOCFLAGS: "-D warnings"
+
+jobs:
+  plan:
+    name: Plan the execution
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Compute matrix
+        uses: ./.github/actions/plan
+        id: set-matrix
+        with:
+          plan-name: code
+
+  test:
+    needs:
+      - plan
+    strategy:
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+      fail-fast: false
+    name: |-
+      ${{ matrix.plan.mode.platformIndependent == true && matrix.plan.mode.name || format('{1} @ {0}', matrix.plan.platform.name, matrix.plan.mode.name) }}
+    runs-on: ${{ matrix.plan.platform.os }}
+    env: ${{ matrix.plan.platform.env }}
+    timeout-minutes: 50
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        timeout-minutes: 5
+
+      - uses: ./.github/actions/common-setup
+        with:
+          platformCacheKey: ${{ matrix.plan.platform.cacheKey }}
+          modeCacheKey: ${{ matrix.plan.mode.cargoCacheKey }}
+          buildEnvScript: ${{ matrix.plan.platform.buildEnvScript }}
+        timeout-minutes: 10
+
+      - name: Run cargo ${{ matrix.plan.mode.cargoCommand }}
+        run: cargo ${{ matrix.plan.mode.cargoCommand }} ${{ matrix.plan.mode.cargoArgs }}
+
+  downloadable-utils:
+    strategy:
+      matrix:
+        util:
+          - name: cargo deny
+            download: >
+              curl -sSL "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.19.0/cargo-deny-0.19.0-x86_64-unknown-linux-musl.tar.gz" |
+                sudo tar -xzvf - -C /usr/local/bin --strip-components=1
+            run: cargo-deny check --hide-inclusion-graph --show-stats
+            requiresRust: true
+
+          - name: taplo
+            download: >
+              curl -sSL "https://github.com/tamasfe/taplo/releases/download/0.10.0/taplo-linux-x86_64.gz" |
+                zcat > /usr/local/bin/taplo \
+              && chmod +x /usr/local/bin/taplo
+            run: taplo format --check
+
+          - name: cargo sort
+            download: >
+              curl -sSL "https://github.com/DevinR528/cargo-sort/releases/download/v2.0.2/cargo-sort-x86_64-unknown-linux-gnu.tar.gz" |
+                sudo tar -xzvf - -C /usr/local/bin
+            run: cargo-sort -cwg
+
+          - name: cargo shear
+            download: >
+              curl -sSL "https://github.com/Boshen/cargo-shear/releases/download/v1.9.1/cargo-shear-x86_64-unknown-linux-gnu.tar.gz" |
+                sudo tar -xzvf - -C /usr/local/bin
+            run: cargo-shear
+
+          - name: typos
+            download: >
+              curl -sSL "https://github.com/crate-ci/typos/releases/download/v1.42.0/typos-v1.42.0-x86_64-unknown-linux-musl.tar.gz" |
+                sudo tar -xzvf - -C /usr/local/bin
+            run: typos
+
+      fail-fast: false
+    name: ${{ matrix.util.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        timeout-minutes: 5
+
+      - uses: ./.github/actions/common-setup
+        with:
+          requiresRust: ${{ matrix.util.requiresRust }}
+        timeout-minutes: 10
+
+      - name: Download ${{ matrix.util.name }}
+        run: ${{ matrix.util.download }}
+        timeout-minutes: 10
+
+      - run: ${{ matrix.util.run }}
+        timeout-minutes: 10
