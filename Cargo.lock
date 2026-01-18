@@ -3,6 +3,10 @@
 version = 4
 
 [[package]]
+name = "imap-checker"
+version = "0.1.0"
+
+[[package]]
 name = "main"
 version = "0.1.0"
 dependencies = [
