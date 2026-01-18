@@ -5,3 +5,4 @@ edition = "2024"
 publish = false
 
 [dependencies]
+tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }
