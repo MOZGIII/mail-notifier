@@ -1,5 +1,5 @@
 [package]
-name = "imap-checker"
+name = "imap-tls"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,4 +7,3 @@ edition = "2024"
 async-imap = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["io-util", "net"] }
-tracing = { workspace = true }

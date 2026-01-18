@@ -9,10 +9,13 @@ pub enum FetchCountsError {
 }
 
 /// Query the current total and unread counts for the mailbox.
-pub(crate) async fn fetch_counts(
-    session: &mut async_imap::Session<tokio_rustls::client::TlsStream<tokio::net::TcpStream>>,
+pub(crate) async fn fetch_counts<S>(
+    session: &mut async_imap::Session<S>,
     mailbox: &str,
-) -> Result<crate::MailboxCounts, FetchCountsError> {
+) -> Result<crate::MailboxCounts, FetchCountsError>
+where
+    S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + std::fmt::Debug,
+{
     let status = session.status(mailbox, "(MESSAGES UNSEEN)").await?;
     Ok(crate::MailboxCounts {
         total: status.exists,

@@ -3,10 +3,6 @@
 /// Errors returned by the IMAP monitor.
 #[derive(Debug, thiserror::Error)]
 pub enum MonitorError {
-    /// Connection or authentication error.
-    #[error("connect error: {0}")]
-    Connect(#[from] crate::ConnectError),
-
     /// Mailbox count query error.
     #[error("count query error: {0}")]
     FetchCounts(#[from] crate::FetchCountsError),
@@ -21,18 +17,23 @@ pub enum MonitorError {
 }
 
 /// Monitor new email using IMAP IDLE and log unread and total counts.
-pub async fn monitor_new_mail(ctx: &crate::ImapClientContext) -> Result<(), MonitorError> {
-    let mut session = crate::connect_and_login(ctx).await?;
-
+pub async fn monitor_new_mail<S>(
+    mut session: async_imap::Session<S>,
+    mailbox: &str,
+    idle_timeout: std::time::Duration,
+) -> Result<(), MonitorError>
+where
+    S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + std::fmt::Debug,
+{
     let capabilities = session.capabilities().await?;
     if !capabilities.has_str("IDLE") {
         return Err(MonitorError::IdleNotSupported);
     }
 
-    session.select(&ctx.mailbox).await?;
-    let mut last_counts = crate::fetch_counts(&mut session, &ctx.mailbox).await?;
+    session.select(mailbox).await?;
+    let mut last_counts = crate::fetch_counts(&mut session, mailbox).await?;
     tracing::info!(
-        mailbox = %ctx.mailbox,
+        mailbox = %mailbox,
         total = last_counts.total,
         unread = last_counts.unread,
         "initial mailbox counts"
@@ -41,7 +42,7 @@ pub async fn monitor_new_mail(ctx: &crate::ImapClientContext) -> Result<(), Moni
     loop {
         let mut idle_handle = session.idle();
         idle_handle.init().await?;
-        let (idle_wait, _stop) = idle_handle.wait_with_timeout(ctx.idle_timeout);
+        let (idle_wait, _stop) = idle_handle.wait_with_timeout(idle_timeout);
         let idle_response = idle_wait.await?;
         session = idle_handle.done().await?;
 
@@ -57,18 +58,18 @@ pub async fn monitor_new_mail(ctx: &crate::ImapClientContext) -> Result<(), Moni
             }
         }
 
-        let counts = crate::fetch_counts(&mut session, &ctx.mailbox).await?;
+        let counts = crate::fetch_counts(&mut session, mailbox).await?;
         if counts != last_counts {
             if counts.total > last_counts.total || counts.unread > last_counts.unread {
                 tracing::info!(
-                    mailbox = %ctx.mailbox,
+                    mailbox = %mailbox,
                     total = counts.total,
                     unread = counts.unread,
                     "new mail available"
                 );
             } else {
                 tracing::info!(
-                    mailbox = %ctx.mailbox,
+                    mailbox = %mailbox,
                     total = counts.total,
                     unread = counts.unread,
                     "mailbox counts updated"
