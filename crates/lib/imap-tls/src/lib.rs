@@ -33,22 +33,55 @@ pub enum TlsMode {
     StartTls,
 }
 
+/// Connector for upgrading a TCP stream to a secured IMAP stream.
+pub trait TlsConnector {
+    /// Secured stream type.
+    type Stream;
+
+    /// Error type returned by the connector.
+    type Error;
+
+    /// Connect using the provided server name and TCP stream.
+    fn connect(
+        &self,
+        tls_server_name: &str,
+        tcp_stream: tokio::net::TcpStream,
+    ) -> impl std::future::Future<Output = Result<Self::Stream, Self::Error>> + Send;
+}
+
+impl<S, E, F, Fut> TlsConnector for F
+where
+    F: Fn(&str, tokio::net::TcpStream) -> Fut,
+    Fut: std::future::Future<Output = Result<S, E>> + Send,
+{
+    type Stream = S;
+    type Error = E;
+
+    fn connect(
+        &self,
+        tls_server_name: &str,
+        tcp_stream: tokio::net::TcpStream,
+    ) -> impl std::future::Future<Output = Result<Self::Stream, Self::Error>> + Send {
+        (self)(tls_server_name, tcp_stream)
+    }
+}
+
 /// Connect to the IMAP server using the provided connector.
-pub async fn connect<S, F, Fut, E>(
+pub async fn connect<C>(
     tcp_stream: tokio::net::TcpStream,
     tls_server_name: &str,
     tls_mode: TlsMode,
-    connector: F,
-) -> Result<async_imap::Client<S>, ConnectError<E>>
+    connector: C,
+) -> Result<async_imap::Client<C::Stream>, ConnectError<C::Error>>
 where
-    S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + std::fmt::Debug,
-    F: Fn(&str, tokio::net::TcpStream) -> Fut,
-    Fut: std::future::Future<Output = Result<S, E>>,
-    E: std::error::Error + Send + Sync + 'static,
+    C: TlsConnector,
+    C::Stream: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + std::fmt::Debug,
+    C::Error: std::error::Error + Send + Sync + 'static,
 {
     let client = match tls_mode {
         TlsMode::Implicit => {
-            let stream = connector(tls_server_name, tcp_stream)
+            let stream = connector
+                .connect(tls_server_name, tcp_stream)
                 .await
                 .map_err(ConnectError::Tls)?;
             let mut client = async_imap::Client::new(stream);
@@ -66,7 +99,8 @@ where
                 .ok_or(ConnectError::MissingGreeting)?;
             client.run_command_and_check_ok("STARTTLS", None).await?;
             let tcp_stream = client.into_inner();
-            let stream = connector(tls_server_name, tcp_stream)
+            let stream = connector
+                .connect(tls_server_name, tcp_stream)
                 .await
                 .map_err(ConnectError::Tls)?;
             async_imap::Client::new(stream)
