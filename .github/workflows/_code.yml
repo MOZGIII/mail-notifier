@@ -7,6 +7,7 @@ defaults:
 
 env:
   RUSTDOCFLAGS: "-D warnings"
+  RUN_IMAP_INTEGRATION_TESTS: "true"
 
 jobs:
   plan:
