@@ -13,10 +13,7 @@ const IMAP_PORT: u16 = 3143;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn imap_counts_roundtrip() -> Result<(), Box<dyn Error + Send + Sync>> {
-    if std::env::var("RUN_IMAP_INTEGRATION_TESTS").is_err() {
-        eprintln!("skipping IMAP integration tests; set RUN_IMAP_INTEGRATION_TESTS=1 to run");
-        return Ok(());
-    }
+    imap_integration::require_integration_tests_enabled()?;
 
     let container = testcontainers::GenericImage::new("greenmail/standalone", "latest")
         .with_exposed_port(IMAP_PORT.tcp())
