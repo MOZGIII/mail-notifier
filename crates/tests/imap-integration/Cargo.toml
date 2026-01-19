@@ -6,9 +6,9 @@ publish = false
 
 [dependencies]
 async-imap = { workspace = true }
+testcontainers = { workspace = true }
 tokio = { workspace = true, features = ["net", "time"] }
 
 [dev-dependencies]
 imap-checker = { workspace = true }
-testcontainers = { workspace = true }
 tokio = { workspace = true, features = ["macros", "net", "rt-multi-thread", "time"] }
