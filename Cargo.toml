@@ -4,17 +4,17 @@ members = ["crates/*/*"]
 
 [workspace.dependencies]
 imap-checker = { path = "crates/lib/imap-checker" }
-imap-tls-core = { path = "crates/lib/imap-tls-core" }
 imap-tls = { path = "crates/lib/imap-tls" }
+imap-tls-core = { path = "crates/lib/imap-tls-core" }
 imap-tls-rustls = { path = "crates/lib/imap-tls-rustls" }
 
 async-imap = { version = "0.11", default-features = false, features = ["runtime-tokio"] }
+color-eyre = "0.6"
 envfury = "0.2"
 rustls = "0.23"
 rustls-native-certs = "0.8"
-tokio-rustls = "0.26"
-color-eyre = "0.6"
 thiserror = "2"
 tokio = { version = "1", default-features = false }
+tokio-rustls = "0.26"
 tracing = "0.1"
 tracing-subscriber = "0.3"
