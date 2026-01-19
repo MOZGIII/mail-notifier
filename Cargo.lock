@@ -452,7 +452,7 @@ name = "imap-checker"
 version = "0.1.0"
 dependencies = [
  "async-imap",
- "thiserror 1.0.69",
+ "thiserror 2.0.18",
  "tokio",
  "tracing",
 ]
@@ -472,7 +472,7 @@ version = "0.1.0"
 dependencies = [
  "async-imap",
  "imap-tls-core",
- "thiserror 1.0.69",
+ "thiserror 2.0.18",
  "tokio",
 ]
 
@@ -490,7 +490,7 @@ dependencies = [
  "imap-tls-core",
  "rustls",
  "rustls-native-certs",
- "thiserror 1.0.69",
+ "thiserror 2.0.18",
  "tokio",
  "tokio-rustls",
 ]
