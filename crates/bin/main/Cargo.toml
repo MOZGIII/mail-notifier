@@ -6,6 +6,10 @@ publish = false
 
 [dependencies]
 color-eyre = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }
+envfury = { workspace = true }
+imap-checker = { workspace = true }
+imap-tls = { workspace = true }
+imap-tls-rustls = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "net"] }
 tracing-subscriber = { workspace = true }
 tracing = { workspace = true }
