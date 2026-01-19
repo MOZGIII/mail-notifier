@@ -7,5 +7,5 @@ publish = false
 [dependencies]
 async-imap = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, features = ["io-util", "net"] }
+tokio = { workspace = true, features = ["io-util"] }
 tracing = { workspace = true }
