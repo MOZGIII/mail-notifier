@@ -5,5 +5,6 @@ edition = "2024"
 
 [dependencies]
 async-imap = { workspace = true }
+imap-tls-core = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["io-util", "net"] }

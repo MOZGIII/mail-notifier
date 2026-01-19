@@ -462,7 +462,15 @@ name = "imap-tls"
 version = "0.1.0"
 dependencies = [
  "async-imap",
+ "imap-tls-core",
  "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "imap-tls-core"
+version = "0.1.0"
+dependencies = [
  "tokio",
 ]
 
@@ -470,6 +478,7 @@ dependencies = [
 name = "imap-tls-rustls"
 version = "0.1.0"
 dependencies = [
+ "imap-tls-core",
  "rustls",
  "rustls-native-certs",
  "thiserror",

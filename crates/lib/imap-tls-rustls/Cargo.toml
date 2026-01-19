@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+imap-tls-core = { workspace = true }
 rustls = { workspace = true }
 rustls-native-certs = { workspace = true }
 thiserror = { workspace = true }
