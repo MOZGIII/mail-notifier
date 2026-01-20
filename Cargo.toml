@@ -4,6 +4,7 @@ members = ["crates/*/*"]
 
 [workspace.dependencies]
 config-core = { path = "crates/lib/config-core" }
+config-yaml = { path = "crates/lib/config-yaml" }
 imap-checker = { path = "crates/lib/imap-checker" }
 imap-tls = { path = "crates/lib/imap-tls" }
 imap-tls-core = { path = "crates/lib/imap-tls-core" }

@@ -1344,6 +1344,8 @@ name = "main"
 version = "0.1.0"
 dependencies = [
  "color-eyre",
+ "config-core",
+ "config-yaml",
  "envfury",
  "imap-checker",
  "imap-tls",
