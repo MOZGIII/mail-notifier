@@ -4,15 +4,31 @@ Purpose: give AI coding agents the minimal, actionable context to be productive 
 
 - **Project layout (big picture):** This is a Rust workspace. CLI binaries live under `crates/bin/*`; shared library code lives under `crates/lib/*` (for example the IMAP logic in `crates/lib/imap-checker`). The top-level Cargo.toml defines the workspace and CI/packaging expects the workspace layout.
 
-- **Primary binary:** See [crates/bin/main/src/main.rs](crates/bin/main/src/main.rs) — binaries are intentionally thin: keep business logic in the library crates and call into them from `main`.
+- **Primary binary:** See [crates/bin/main/src/main.rs](../crates/bin/main/src/main.rs) — binaries are intentionally thin: keep business logic in the library crates and call into them from `main`.
 
-- **Key library crate:** See [crates/lib/imap-checker](crates/lib/imap-checker) for core email-checking logic. Prefer to add/modify logic here rather than in the `bin` crate.
+- **Key library crate:** See [crates/lib/imap-checker](../crates/lib/imap-checker) for core email-checking logic. Prefer to add/modify logic here rather than in the `bin` crate.
 
 - **Build / test / run commands:**
   - Build whole workspace: `cargo build --workspace`
   - Build release binary: `cargo build -p main --release` or `cd crates/bin/main && cargo build --release`
   - Run binary locally: `cargo run -p main` or `cargo run --bin main` from workspace root
   - Run tests: `cargo test --workspace`
+
+- **Toolchain & linting choices:**
+  - Toolchain is pinned in `rust-toolchain.toml` (nightly) and CI expects it.
+  - Workspace uses a strict lint profile via `.cargo/config.toml` (notably `-Dunsafe_code`, `-Wmissing_docs`, and clippy warnings); keep new code lint-clean.
+  - Rustdoc is built with `--document-private-items`.
+
+- **Dependency management:**
+  - Prefer adding crates to `[workspace.dependencies]` in the root `Cargo.toml`, then reference them with `workspace = true` in member crates.
+  - Prefer the latest stable crate versions by default unless a compatibility reason is documented.
+  - Crates use edition 2024; keep new crates aligned.
+
+- **Repo hygiene tools:**
+  - `deny.toml` configures `cargo-deny`; keep license choices and advisory ignores consistent.
+  - This repo uses `cargo shear` to detect unused dependencies; keep changes compatible with it.
+  - `taplo.toml` defines TOML formatting (key order is enforced for `Cargo.toml`).
+  - `typos.toml` configures spelling checks.
 
 - **Docker / packaging:** The repo contains a `Dockerfile` and `docker-bake.hcl`. CI uses those for producing images — do not assume local Docker is required for small code changes.
 
@@ -32,7 +48,7 @@ Purpose: give AI coding agents the minimal, actionable context to be productive 
   - Do not move core logic into `bin` crates; keep it in `crates/lib/*`.
 
 - **Examples (actionable edits):**
-  - To add a feature that checks a new IMAP flag, implement logic in [crates/lib/imap-checker/src](crates/lib/imap-checker/src) and add unit tests there, then call it from [crates/bin/main/src/main.rs](crates/bin/main/src/main.rs).
+  - To add a feature that checks a new IMAP flag, implement logic in [crates/lib/imap-checker/src](../crates/lib/imap-checker/src) and add unit tests there, then call it from [crates/bin/main/src/main.rs](../crates/bin/main/src/main.rs).
   - To add a new CLI binary, create `crates/bin/<name>/Cargo.toml` and `src/main.rs`, then update `build-utils/list-bin-targets` if it enumerates binaries.
 
 - **Quick debugging tips:**
