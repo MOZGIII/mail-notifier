@@ -1,0 +1,14 @@
+[package]
+name = "config-yaml"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+config-core = { workspace = true, features = ["serde"] }
+serde_yaml_bw = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["fs"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

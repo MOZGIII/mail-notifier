@@ -1,0 +1,14 @@
+servers:
+  - name: primary
+    host: imap.example.com
+    port: 993
+    tls:
+      mode: implicit
+      server-name: imap.example.com
+    credentials:
+      username: user@example.com
+      password: secret
+    mailboxes:
+      - name: INBOX
+        idle-timeout-secs: 300
+      - name: Alerts
