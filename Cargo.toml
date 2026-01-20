@@ -12,11 +12,14 @@ imap-tls-rustls = { path = "crates/lib/imap-tls-rustls" }
 
 async-imap = { version = "0.11", default-features = false, features = ["runtime-tokio"] }
 color-eyre = "0.6"
+crossterm = "0.29.0"
 envfury = "0.2"
+ratatui = "0.30.0"
 rustls = "0.23"
 rustls-native-certs = "0.8"
 serde = "1"
 serde_yaml_bw = "2.5"
+slotmap = "1.1.1"
 testcontainers = "0.26"
 thiserror = "2"
 tokio = { version = "1", default-features = false }

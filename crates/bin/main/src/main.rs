@@ -1,85 +1,102 @@
 //! Main entrypoint.
 
-use std::path::PathBuf;
-use std::time::Duration;
-
-/// Default IDLE timeout (seconds) when not specified in config.
-const DEFAULT_IDLE_TIMEOUT_SECS: u64 = 300;
-
-/// Convert config TLS mode to IMAP TLS mode.
-fn map_tls_mode(mode: config_core::TlsMode) -> imap_tls::TlsMode {
-    match mode {
-        config_core::TlsMode::Implicit => imap_tls::TlsMode::Implicit,
-        config_core::TlsMode::StartTls => imap_tls::TlsMode::StartTls,
-    }
-}
-
-/// Default IMAP port for the given TLS mode.
-fn default_port(mode: imap_tls::TlsMode) -> u16 {
-    match mode {
-        imap_tls::TlsMode::Implicit => 993,
-        imap_tls::TlsMode::StartTls => 143,
-    }
-}
-
-/// Connect and monitor a mailbox based on configured server settings.
-async fn monitor_mailbox(
-    server: config_core::ServerConfig,
-    mailbox: config_core::MailboxConfig,
-) -> color_eyre::eyre::Result<()> {
-    let tls_mode = map_tls_mode(server.tls.mode);
-    let port = server.port.unwrap_or_else(|| default_port(tls_mode));
-    let tls_server_name = server.tls.server_name.as_deref().unwrap_or(&server.host);
-    let idle_timeout_secs = mailbox
-        .idle_timeout_secs
-        .or(server.idle_timeout_secs)
-        .unwrap_or(DEFAULT_IDLE_TIMEOUT_SECS);
-    let idle_timeout = Duration::from_secs(idle_timeout_secs);
-
-    tracing::info!(
-        server_name = %server.name,
-        imap_host = %server.host,
-        imap_port = port,
-        imap_mailbox = %mailbox.name,
-        imap_tls_mode = ?tls_mode,
-        "starting IMAP monitor"
-    );
-
-    let tcp_stream = tokio::net::TcpStream::connect((server.host.as_str(), port)).await?;
-    let tls_connector = imap_tls_rustls::connector()?;
-    let client = imap_tls::connect(tcp_stream, tls_server_name, tls_mode, tls_connector).await?;
-
-    let session = client
-        .login(&server.credentials.username, &server.credentials.password)
-        .await
-        .map_err(|(err, _client)| err)?;
-
-    imap_checker::monitor_new_mail(session, &mailbox.name, idle_timeout).await?;
-
-    Ok(())
-}
+mod mailbox;
+mod terminal;
+mod ui;
 
 #[tokio::main]
 async fn main() -> color_eyre::eyre::Result<()> {
     color_eyre::install()?;
     tracing_subscriber::fmt::init();
 
-    let config_path: PathBuf = envfury::must("MAIL_NOTIFIER_CONFIG")?;
+    let config_path: std::path::PathBuf = envfury::must("MAIL_NOTIFIER_CONFIG")?;
     let config = config_yaml::load_from_path(&config_path).await?;
 
     let mut join_set = tokio::task::JoinSet::new();
+    let (sender, mut receiver) = tokio::sync::mpsc::channel(128);
+
+    let mut entries: slotmap::SlotMap<slotmap::DefaultKey, crate::ui::EntryState> =
+        slotmap::SlotMap::with_key();
 
     for server in config.servers {
         for mailbox in &server.mailboxes {
+            let label = format!("{} / {}", server.name, mailbox.name);
+            let entry_key = entries.insert(crate::ui::EntryState {
+                name: label.clone(),
+                unread: 0,
+            });
+
             let server = server.clone();
             let mailbox = mailbox.clone();
-            join_set.spawn(async move { monitor_mailbox(server, mailbox).await });
+            let sender = sender.clone();
+            join_set.spawn(async move {
+                let notify = move |counts| {
+                    let sender = sender.clone();
+                    async move {
+                        let _ = sender.send(MailboxUpdate { entry_key, counts }).await;
+                    }
+                };
+
+                crate::mailbox::monitor_mailbox_counts(server, mailbox, notify).await
+            });
         }
     }
 
-    while let Some(result) = join_set.join_next().await {
-        result.unwrap()?
+    drop(sender);
+
+    let _guard = crate::terminal::TerminalGuard::enter()?;
+    let backend = ratatui::backend::CrosstermBackend::new(std::io::stdout());
+    let mut terminal = ratatui::Terminal::new(backend)?;
+    terminal.clear()?;
+
+    let (input_sender, mut input_receiver) = tokio::sync::mpsc::channel(32);
+    tokio::task::spawn_blocking(move || {
+        while let Ok(evt) = crossterm::event::read() {
+            if input_sender.blocking_send(evt).is_err() {
+                break;
+            }
+        }
+    });
+
+    crate::ui::render(&mut terminal, entries.values())?;
+
+    loop {
+        tokio::select! {
+            Some(input_event) = input_receiver.recv() => {
+                match input_event {
+                    crossterm::event::Event::Key(key)
+                        if matches!(key.code, crossterm::event::KeyCode::Char('q') | crossterm::event::KeyCode::Esc) => {
+                        break;
+                    }
+                    crossterm::event::Event::Resize(_, _) => {
+                        crate::ui::render(&mut terminal, entries.values())?;
+                    }
+                    _ => {}
+                }
+            }
+            Some(update) = receiver.recv() => {
+                if let Some(entry) = entries.get_mut(update.entry_key) {
+                    entry.unread = update.counts.unread;
+                }
+
+                crate::ui::render(&mut terminal, entries.values())?;
+            }
+            Some(result) = join_set.join_next() => {
+                result??;
+            }
+            else => break,
+        }
     }
 
     Ok(())
+}
+
+/// Update payload for a mailbox.
+#[derive(Debug, Clone)]
+struct MailboxUpdate {
+    /// Key for the UI entry.
+    entry_key: slotmap::DefaultKey,
+
+    /// Mailbox counts.
+    counts: imap_checker::MailboxCounts,
 }
