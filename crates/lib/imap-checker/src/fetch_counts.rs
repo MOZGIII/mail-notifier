@@ -9,7 +9,7 @@ pub enum FetchCountsError {
 }
 
 /// Query the current total and unread counts for the mailbox.
-pub(crate) async fn fetch_counts<S>(
+pub async fn fetch_counts<S>(
     session: &mut async_imap::Session<S>,
     mailbox: &str,
 ) -> Result<crate::MailboxCounts, FetchCountsError>
