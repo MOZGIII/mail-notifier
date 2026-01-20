@@ -1,6 +1,6 @@
 //! Main entrypoint.
 
-mod mailbox;
+mod config_bringup;
 mod terminal;
 mod ui;
 
@@ -37,7 +37,8 @@ async fn main() -> color_eyre::eyre::Result<()> {
                     }
                 };
 
-                crate::mailbox::monitor_mailbox_counts(server, mailbox, notify).await
+                let config = crate::config_bringup::build_monitor_config(server, mailbox);
+                mailbox_monitor::monitor_mailbox_counts(config, notify).await
             });
         }
     }
