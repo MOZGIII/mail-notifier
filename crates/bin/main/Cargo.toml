@@ -6,6 +6,8 @@ publish = false
 
 [dependencies]
 color-eyre = { workspace = true }
+config-core = { workspace = true }
+config-yaml = { workspace = true }
 envfury = { workspace = true }
 imap-checker = { workspace = true }
 imap-tls = { workspace = true }
