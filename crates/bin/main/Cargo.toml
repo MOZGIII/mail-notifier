@@ -8,10 +8,13 @@ publish = false
 color-eyre = { workspace = true }
 config-core = { workspace = true }
 config-yaml = { workspace = true }
+crossterm = { workspace = true }
 envfury = { workspace = true }
 imap-checker = { workspace = true }
 imap-tls = { workspace = true }
 imap-tls-rustls = { workspace = true }
+ratatui = { workspace = true }
+slotmap = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
