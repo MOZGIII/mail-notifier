@@ -7,7 +7,9 @@ const IMAP_PASSWORD: &str = "secret";
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn imap_counts_roundtrip() -> Result<(), Box<dyn Error + Send + Sync>> {
-    imap_integration::require_integration_tests_enabled()?;
+    if imap_integration::require_integration_tests_enabled().is_err() {
+        return Ok(());
+    }
 
     let container = imap_integration::start_greenmail(IMAP_USER, IMAP_PASSWORD).await?;
 
