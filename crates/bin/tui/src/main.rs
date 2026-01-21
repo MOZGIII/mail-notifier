@@ -1,7 +1,5 @@
 //! Main entrypoint.
 
-mod terminal;
-
 #[tokio::main]
 async fn main() -> color_eyre::eyre::Result<()> {
     color_eyre::install()?;
@@ -43,7 +41,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
 
     drop(sender);
 
-    let _guard = crate::terminal::TerminalGuard::enter()?;
+    let _guard = tui_crossterm_guard::TerminalGuard::enter()?;
     let backend = ratatui::backend::CrosstermBackend::new(std::io::stdout());
     let mut terminal = ratatui::Terminal::new(backend)?;
     terminal.clear()?;

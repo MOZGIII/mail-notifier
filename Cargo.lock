@@ -3616,7 +3616,15 @@ dependencies = [
  "slotmap",
  "tokio",
  "tracing-subscriber",
+ "tui-crossterm-guard",
  "tui-view",
+]
+
+[[package]]
+name = "tui-crossterm-guard"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
 ]
 
 [[package]]
