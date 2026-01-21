@@ -1,0 +1,24 @@
+[package]
+name = "keyring-bridge"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+keyring-core = { workspace = true }
+thiserror = { workspace = true }
+
+[target.'cfg(target_os = "freebsd")'.dependencies]
+dbus-secret-service-keyring-store = { workspace = true, features = ["crypto-rust", "vendored"] }
+
+[target.'cfg(target_os = "ios")'.dependencies]
+apple-native-keyring-store = { workspace = true, features = ["protected"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+dbus-secret-service-keyring-store = { workspace = true, features = ["crypto-rust", "vendored"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+apple-native-keyring-store = { workspace = true, features = ["keychain"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-native-keyring-store = { workspace = true }
