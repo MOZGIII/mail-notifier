@@ -289,7 +289,10 @@ impl std::borrow::ToOwned for ImapUtf7Str {
 
 /// Encode a UTF-8 string into IMAP modified UTF-7.
 fn encode_imap_utf7(input: &str) -> String {
-    if input.is_ascii() {
+    if input
+        .bytes()
+        .all(|byte| (0x20..=0x7e).contains(&byte) && byte != b'&')
+    {
         return input.to_string();
     }
 
@@ -698,7 +701,7 @@ mod tests {
 
     #[test]
     fn reject_invalid_base64_length() {
-        let err = ImapUtf7Str::new("Bad&AAA-").unwrap_err();
+        let err = ImapUtf7Str::new("Bad&A-").unwrap_err();
         assert!(matches!(
             err,
             super::ImapUtf7ValidateError::InvalidBase64Length(_)
@@ -707,7 +710,7 @@ mod tests {
 
     #[test]
     fn reject_invalid_utf16_length() {
-        let err = ImapUtf7Str::new("Bad&AAE-").unwrap_err();
+        let err = ImapUtf7Str::new("Bad&AA-").unwrap_err();
         assert!(matches!(
             err,
             super::ImapUtf7ValidateError::InvalidUtf16Length(_)
