@@ -17,6 +17,7 @@ async-imap = { version = "0.11", default-features = false, features = ["runtime-
 color-eyre = "0.6"
 crossterm = "0.29.0"
 envfury = "0.2"
+futures = "0.3"
 ratatui = "0.30.0"
 rustls = { version = "0.23", default-features = false, features = ["logging", "ring", "std", "tls12"] }
 rustls-native-certs = "0.8"

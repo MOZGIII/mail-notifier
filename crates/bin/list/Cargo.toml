@@ -1,0 +1,18 @@
+[package]
+name = "list"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+color-eyre = { workspace = true }
+config-bringup = { workspace = true }
+config-yaml = { workspace = true }
+envfury = { workspace = true }
+futures = { workspace = true }
+imap-tls = { workspace = true }
+imap-tls-rustls = { workspace = true }
+imap-utf7 = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
