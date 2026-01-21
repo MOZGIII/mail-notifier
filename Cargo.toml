@@ -14,6 +14,7 @@ imap-utf7 = { path = "crates/lib/imap-utf7" }
 keyring-bridge = { path = "crates/lib/keyring-bridge" }
 keyring-password = { path = "crates/lib/keyring-password" }
 mailbox-monitor = { path = "crates/lib/mailbox-monitor" }
+tui-crossterm-guard = { path = "crates/lib/tui-crossterm-guard" }
 tui-view = { path = "crates/lib/tui-view" }
 
 apple-native-keyring-store = "0.2.2"
