@@ -1,7 +1,7 @@
 //! Lift raw config into mailbox monitor config.
 
 /// Default IDLE timeout (seconds) when not specified in config.
-pub const DEFAULT_IDLE_TIMEOUT_SECS: u64 = 300;
+const DEFAULT_IDLE_TIMEOUT_SECS: u64 = 300;
 
 /// Convert config TLS mode to IMAP TLS mode.
 fn map_tls_mode(mode: config_core::TlsMode) -> imap_tls::TlsMode {
