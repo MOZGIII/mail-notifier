@@ -42,11 +42,35 @@ fn default_port(mode: imap_tls::TlsMode) -> u16 {
     }
 }
 
-/// Build a resolved mailbox monitor config from config-core types.
-pub async fn build_monitor_config(
+/// Fully resolved bringup configuration shared across mailboxes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BringupServerConfig {
+    /// Human-friendly name for logging and identification.
+    pub server_name: String,
+
+    /// Hostname or IP address of the IMAP server.
+    pub host: String,
+
+    /// IMAP port.
+    pub port: u16,
+
+    /// TLS mode.
+    pub tls_mode: imap_tls::TlsMode,
+
+    /// TLS server name (SNI).
+    pub tls_server_name: String,
+
+    /// Username for IMAP authentication.
+    pub username: String,
+
+    /// Password for IMAP authentication.
+    pub password: String,
+}
+
+/// Build a resolved bringup server config from config-core types.
+pub async fn bringup_server_config(
     server: &config_core::ServerConfig,
-    mailbox: &config_core::MailboxConfig,
-) -> Result<mailbox_monitor::MailboxMonitorConfig, ResolveCredentialsError> {
+) -> Result<BringupServerConfig, ResolveCredentialsError> {
     let tls_mode = map_tls_mode(server.tls.mode);
     let port = server.port.unwrap_or_else(|| default_port(tls_mode));
     let tls_server_name = server
@@ -54,14 +78,9 @@ pub async fn build_monitor_config(
         .server_name
         .clone()
         .unwrap_or_else(|| server.host.clone());
-    let idle_timeout_secs = mailbox
-        .idle_timeout_secs
-        .or(server.idle_timeout_secs)
-        .unwrap_or(DEFAULT_IDLE_TIMEOUT_SECS);
-
     let password = resolve_password(&server.credentials).await?;
 
-    Ok(mailbox_monitor::MailboxMonitorConfig {
+    Ok(BringupServerConfig {
         server_name: server.name.clone(),
         host: server.host.clone(),
         port,
@@ -69,20 +88,42 @@ pub async fn build_monitor_config(
         tls_server_name,
         username: server.credentials.username.clone(),
         password,
+    })
+}
+
+/// Build a resolved mailbox monitor config from config-core types.
+pub async fn bringup_monitor_config(
+    server: &config_core::ServerConfig,
+    mailbox: &config_core::MailboxConfig,
+) -> Result<mailbox_monitor::MailboxMonitorConfig, ResolveCredentialsError> {
+    let server_config = bringup_server_config(server).await?;
+    let idle_timeout_secs = mailbox
+        .idle_timeout_secs
+        .or(server.idle_timeout_secs)
+        .unwrap_or(DEFAULT_IDLE_TIMEOUT_SECS);
+
+    Ok(mailbox_monitor::MailboxMonitorConfig {
+        server_name: server_config.server_name,
+        host: server_config.host,
+        port: server_config.port,
+        tls_mode: server_config.tls_mode,
+        tls_server_name: server_config.tls_server_name,
+        username: server_config.username,
+        password: server_config.password,
         mailbox: imap_utf7::ImapUtf7String::from_utf8(&mailbox.name),
         idle_timeout: std::time::Duration::from_secs(idle_timeout_secs),
     })
 }
 
 /// Build resolved mailbox monitor configs for all servers/mailboxes in a config.
-pub async fn build_monitor_configs(
+pub async fn bringup_monitor_configs(
     config: &config_core::Config,
 ) -> Result<Vec<mailbox_monitor::MailboxMonitorConfig>, ResolveCredentialsError> {
     let mut configs = Vec::new();
 
     for server in &config.servers {
         for mailbox in &server.mailboxes {
-            configs.push(build_monitor_config(server, mailbox).await?);
+            configs.push(bringup_monitor_config(server, mailbox).await?);
         }
     }
 
