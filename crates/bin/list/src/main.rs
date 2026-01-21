@@ -10,6 +10,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
 
     let config_path: std::path::PathBuf = envfury::must("MAIL_NOTIFIER_CONFIG")?;
     let config = config_yaml::load_from_path(&config_path).await?;
+    let _keyring_guard = config_bringup::init_keyring_if_needed(&config)?;
 
     for server in &config.servers {
         let Some(first_mailbox) = server.mailboxes.first() else {
@@ -17,7 +18,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
             continue;
         };
 
-        let monitor_config = config_bringup::build_monitor_config(server, first_mailbox);
+        let monitor_config = config_bringup::build_monitor_config(server, first_mailbox).await?;
 
         tracing::info!(
             server_name = %monitor_config.server_name,

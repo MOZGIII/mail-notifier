@@ -73,7 +73,34 @@ pub struct Credentials {
     pub username: String,
 
     /// Password for IMAP authentication.
-    pub password: String,
+    pub password: PasswordSource,
+}
+
+/// Source for a password value.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(untagged))]
+#[derive(Debug, Clone, PartialEq)]
+pub enum PasswordSource {
+    /// Plaintext password stored directly in config.
+    Plain(String),
+
+    /// Reference to a keyring entry nested under a `keyring` field.
+    Keyring {
+        /// Keyring reference for resolving a password.
+        keyring: KeyringRef,
+    },
+}
+
+/// Keyring reference for resolving a password.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[derive(Debug, Clone, PartialEq)]
+pub struct KeyringRef {
+    /// Keyring service name. Defaults to the application service.
+    pub service: Option<String>,
+
+    /// Keyring account name. Defaults to the credentials username.
+    pub account: Option<String>,
 }
 
 /// A mailbox to monitor.

@@ -11,13 +11,18 @@ imap-tls = { path = "crates/lib/imap-tls" }
 imap-tls-core = { path = "crates/lib/imap-tls-core" }
 imap-tls-rustls = { path = "crates/lib/imap-tls-rustls" }
 imap-utf7 = { path = "crates/lib/imap-utf7" }
+keyring-bridge = { path = "crates/lib/keyring-bridge" }
+keyring-password = { path = "crates/lib/keyring-password" }
 mailbox-monitor = { path = "crates/lib/mailbox-monitor" }
 
+apple-native-keyring-store = "0.2.2"
 async-imap = { version = "0.11", default-features = false, features = ["runtime-tokio"] }
 color-eyre = "0.6"
 crossterm = "0.29.0"
+dbus-secret-service-keyring-store = "0.3.3"
 envfury = "0.2"
 futures = "0.3"
+keyring-core = "0.7.2"
 ratatui = "0.30.0"
 rustls = { version = "0.23", default-features = false, features = ["logging", "ring", "std", "tls12"] }
 rustls-native-certs = "0.8"
@@ -30,3 +35,4 @@ tokio = { version = "1", default-features = false }
 tokio-rustls = { version = "0.26", default-features = false, features = ["logging", "ring", "tls12"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
+windows-native-keyring-store = "0.5.1"

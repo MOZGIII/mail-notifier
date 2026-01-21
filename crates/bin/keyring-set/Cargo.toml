@@ -1,0 +1,16 @@
+[package]
+name = "keyring-set"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+color-eyre = { workspace = true }
+config-bringup = { workspace = true }
+config-core = { workspace = true }
+config-yaml = { workspace = true }
+envfury = { workspace = true }
+keyring-bridge = { workspace = true }
+keyring-password = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tracing-subscriber = { workspace = true }
