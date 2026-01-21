@@ -21,14 +21,15 @@ fn default_port(mode: imap_tls::TlsMode) -> u16 {
 
 /// Build a resolved mailbox monitor config from config-core types.
 pub fn build_monitor_config(
-    server: config_core::ServerConfig,
-    mailbox: config_core::MailboxConfig,
+    server: &config_core::ServerConfig,
+    mailbox: &config_core::MailboxConfig,
 ) -> mailbox_monitor::MailboxMonitorConfig {
     let tls_mode = map_tls_mode(server.tls.mode);
     let port = server.port.unwrap_or_else(|| default_port(tls_mode));
     let tls_server_name = server
         .tls
         .server_name
+        .clone()
         .unwrap_or_else(|| server.host.clone());
     let idle_timeout_secs = mailbox
         .idle_timeout_secs
@@ -36,13 +37,13 @@ pub fn build_monitor_config(
         .unwrap_or(DEFAULT_IDLE_TIMEOUT_SECS);
 
     mailbox_monitor::MailboxMonitorConfig {
-        server_name: server.name,
-        host: server.host,
+        server_name: server.name.clone(),
+        host: server.host.clone(),
         port,
         tls_mode,
         tls_server_name,
-        username: server.credentials.username,
-        password: server.credentials.password,
+        username: server.credentials.username.clone(),
+        password: server.credentials.password.clone(),
         mailbox: imap_utf7::ImapUtf7String::from_utf8(&mailbox.name),
         idle_timeout: std::time::Duration::from_secs(idle_timeout_secs),
     }

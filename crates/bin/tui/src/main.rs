@@ -17,17 +17,16 @@ async fn main() -> color_eyre::eyre::Result<()> {
     let mut entries: slotmap::SlotMap<slotmap::DefaultKey, crate::ui::EntryState> =
         slotmap::SlotMap::with_key();
 
-    for server in config.servers {
+    for server in &config.servers {
         for mailbox in &server.mailboxes {
             let label = format!("{} / {}", server.name, mailbox.name);
             let entry_key = entries.insert(crate::ui::EntryState {
-                name: label.clone(),
+                name: label,
                 unread: 0,
             });
 
-            let server = server.clone();
-            let mailbox = mailbox.clone();
             let sender = sender.clone();
+            let config = config_bringup::build_monitor_config(server, mailbox);
             join_set.spawn(async move {
                 let notify = move |counts| {
                     let sender = sender.clone();
@@ -36,11 +35,11 @@ async fn main() -> color_eyre::eyre::Result<()> {
                     }
                 };
 
-                let config = config_bringup::build_monitor_config(server, mailbox);
                 mailbox_monitor::monitor_mailbox_counts(config, notify).await
             });
         }
     }
+    drop(config);
 
     drop(sender);
 

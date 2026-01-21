@@ -11,13 +11,13 @@ async fn main() -> color_eyre::eyre::Result<()> {
     let config_path: std::path::PathBuf = envfury::must("MAIL_NOTIFIER_CONFIG")?;
     let config = config_yaml::load_from_path(&config_path).await?;
 
-    for server in config.servers {
-        let Some(first_mailbox) = server.mailboxes.first().cloned() else {
+    for server in &config.servers {
+        let Some(first_mailbox) = server.mailboxes.first() else {
             println!("{}: (no mailboxes configured)", server.name);
             continue;
         };
 
-        let monitor_config = config_bringup::build_monitor_config(server.clone(), first_mailbox);
+        let monitor_config = config_bringup::build_monitor_config(server, first_mailbox);
 
         tracing::info!(
             server_name = %monitor_config.server_name,
@@ -51,6 +51,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
             println!("  {name}");
         }
     }
+    drop(config);
 
     Ok(())
 }
