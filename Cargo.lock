@@ -525,6 +525,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "config-bringup"
+version = "0.1.0"
+dependencies = [
+ "config-core",
+ "imap-tls",
+ "mailbox-monitor",
+]
+
+[[package]]
 name = "config-core"
 version = "0.1.0"
 dependencies = [
@@ -1733,12 +1742,11 @@ name = "main"
 version = "0.1.0"
 dependencies = [
  "color-eyre",
- "config-core",
+ "config-bringup",
  "config-yaml",
  "crossterm",
  "envfury",
  "imap-checker",
- "imap-tls",
  "mailbox-monitor",
  "ratatui",
  "slotmap",

@@ -3,6 +3,7 @@ resolver = "3"
 members = ["crates/*/*"]
 
 [workspace.dependencies]
+config-bringup = { path = "crates/lib/config-bringup" }
 config-core = { path = "crates/lib/config-core" }
 config-yaml = { path = "crates/lib/config-yaml" }
 imap-checker = { path = "crates/lib/imap-checker" }

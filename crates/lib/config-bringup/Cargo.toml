@@ -1,0 +1,10 @@
+[package]
+name = "config-bringup"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+config-core = { workspace = true }
+imap-tls = { workspace = true }
+mailbox-monitor = { workspace = true }
