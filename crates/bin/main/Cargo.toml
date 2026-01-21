@@ -6,12 +6,11 @@ publish = false
 
 [dependencies]
 color-eyre = { workspace = true }
-config-core = { workspace = true }
+config-bringup = { workspace = true }
 config-yaml = { workspace = true }
 crossterm = { workspace = true }
 envfury = { workspace = true }
 imap-checker = { workspace = true }
-imap-tls = { workspace = true }
 mailbox-monitor = { workspace = true }
 ratatui = { workspace = true }
 slotmap = { workspace = true }
