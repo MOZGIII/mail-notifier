@@ -16,3 +16,4 @@ ratatui = { workspace = true }
 slotmap = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
 tracing-subscriber = { workspace = true }
+tui-view = { workspace = true }

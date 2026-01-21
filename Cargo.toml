@@ -14,6 +14,7 @@ imap-utf7 = { path = "crates/lib/imap-utf7" }
 keyring-bridge = { path = "crates/lib/keyring-bridge" }
 keyring-password = { path = "crates/lib/keyring-password" }
 mailbox-monitor = { path = "crates/lib/mailbox-monitor" }
+tui-view = { path = "crates/lib/tui-view" }
 
 apple-native-keyring-store = "0.2.2"
 async-imap = { version = "0.11", default-features = false, features = ["runtime-tokio"] }
