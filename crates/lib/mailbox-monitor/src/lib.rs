@@ -90,7 +90,7 @@ where
         .await
         .map_err(|(err, _client)| err)?;
 
-    imap_checker::monitor_mailbox_counts(session, config.mailbox, config.idle_timeout, notify)
+    imap_checker::monitor_mailbox_counts(session, &config.mailbox, config.idle_timeout, notify)
         .await?;
 
     Ok(())

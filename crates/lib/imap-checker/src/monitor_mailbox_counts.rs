@@ -19,7 +19,7 @@ pub enum MonitorError {
 /// Monitor mailbox counts and send updates on change.
 pub async fn monitor_mailbox_counts<S, F, Fut>(
     mut session: async_imap::Session<S>,
-    mailbox: imap_utf7::ImapUtf7String,
+    mailbox: &imap_utf7::ImapUtf7Str,
     idle_timeout: std::time::Duration,
     mut notify: F,
 ) -> Result<(), MonitorError>
@@ -33,9 +33,8 @@ where
         return Err(MonitorError::IdleNotSupported);
     }
 
-    let mailbox_ref = mailbox.as_imap_utf7_str();
-    session.select(mailbox_ref.as_str()).await?;
-    let mut last_counts = crate::fetch_counts(&mut session, mailbox_ref).await?;
+    session.select(mailbox.as_str()).await?;
+    let mut last_counts = crate::fetch_counts(&mut session, mailbox).await?;
 
     notify(last_counts).await;
 
@@ -46,7 +45,7 @@ where
         let _idle_response = idle_wait.await?;
         session = idle_handle.done().await?;
 
-        let counts = crate::fetch_counts(&mut session, mailbox_ref).await?;
+        let counts = crate::fetch_counts(&mut session, mailbox).await?;
         if counts != last_counts {
             last_counts = counts;
             notify(counts).await;
