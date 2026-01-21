@@ -450,6 +450,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+dependencies = [
+ "color-eyre",
+ "config-bringup",
+ "config-yaml",
+ "envfury",
+ "imap-checker",
+ "mailbox-monitor",
+ "tokio",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "cmake"
 version = "0.1.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"

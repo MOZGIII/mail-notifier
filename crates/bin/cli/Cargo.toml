@@ -1,0 +1,15 @@
+[package]
+name = "cli"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+color-eyre = { workspace = true }
+config-bringup = { workspace = true }
+config-yaml = { workspace = true }
+envfury = { workspace = true }
+imap-checker = { workspace = true }
+mailbox-monitor = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
+tracing-subscriber = { workspace = true }
