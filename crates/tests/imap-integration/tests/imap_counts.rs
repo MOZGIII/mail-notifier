@@ -26,7 +26,8 @@ async fn imap_counts_roundtrip() -> Result<(), Box<dyn Error + Send + Sync>> {
     )
     .await?;
 
-    let before = imap_checker::fetch_counts(&mut session, "INBOX").await?;
+    let mailbox = imap_utf7::ImapUtf7Str::new("INBOX")?;
+    let before = imap_checker::fetch_counts(&mut session, mailbox).await?;
 
     session
         .append(
@@ -38,7 +39,7 @@ async fn imap_counts_roundtrip() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     session.noop().await?;
 
-    let after = imap_checker::fetch_counts(&mut session, "INBOX").await?;
+    let after = imap_checker::fetch_counts(&mut session, mailbox).await?;
 
     assert_eq!(after.total, before.total + 1);
     assert!(after.unread >= before.unread);

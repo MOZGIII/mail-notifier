@@ -27,7 +27,7 @@ pub struct MailboxMonitorConfig {
     pub password: String,
 
     /// Mailbox name (e.g. INBOX).
-    pub mailbox: String,
+    pub mailbox: imap_utf7::ImapUtf7String,
 
     /// Idle timeout.
     pub idle_timeout: Duration,

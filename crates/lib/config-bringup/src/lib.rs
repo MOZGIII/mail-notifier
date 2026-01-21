@@ -43,7 +43,7 @@ pub fn build_monitor_config(
         tls_server_name,
         username: server.credentials.username,
         password: server.credentials.password,
-        mailbox: mailbox.name,
+        mailbox: imap_utf7::ImapUtf7String::from_utf8(&mailbox.name),
         idle_timeout: std::time::Duration::from_secs(idle_timeout_secs),
     }
 }

@@ -11,4 +11,5 @@ tokio = { workspace = true, features = ["net", "time"] }
 
 [dev-dependencies]
 imap-checker = { workspace = true }
+imap-utf7 = { workspace = true }
 tokio = { workspace = true, features = ["macros", "net", "rt-multi-thread", "time"] }
