@@ -1,7 +1,6 @@
 //! Main entrypoint.
 
 mod terminal;
-mod ui;
 
 #[tokio::main]
 async fn main() -> color_eyre::eyre::Result<()> {
@@ -15,13 +14,13 @@ async fn main() -> color_eyre::eyre::Result<()> {
     let mut join_set = tokio::task::JoinSet::new();
     let (sender, mut receiver) = tokio::sync::mpsc::channel(128);
 
-    let mut entries: slotmap::SlotMap<slotmap::DefaultKey, crate::ui::EntryState> =
+    let mut entries: slotmap::SlotMap<slotmap::DefaultKey, tui_view::EntryState> =
         slotmap::SlotMap::with_key();
 
     for server in &config.servers {
         for mailbox in &server.mailboxes {
             let label = format!("{} / {}", server.name, mailbox.name);
-            let entry_key = entries.insert(crate::ui::EntryState {
+            let entry_key = entries.insert(tui_view::EntryState {
                 name: label,
                 unread: 0,
             });
@@ -58,7 +57,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
         }
     });
 
-    crate::ui::render(&mut terminal, entries.values())?;
+    tui_view::render(&mut terminal, entries.values())?;
 
     loop {
         tokio::select! {
@@ -69,7 +68,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
                         break;
                     }
                     crossterm::event::Event::Resize(_, _) => {
-                        crate::ui::render(&mut terminal, entries.values())?;
+                        tui_view::render(&mut terminal, entries.values())?;
                     }
                     _ => {}
                 }
@@ -79,7 +78,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
                     entry.unread = update.counts.unread;
                 }
 
-                crate::ui::render(&mut terminal, entries.values())?;
+                tui_view::render(&mut terminal, entries.values())?;
             }
             Some(result) = join_set.join_next() => {
                 result??;

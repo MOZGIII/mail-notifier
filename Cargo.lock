@@ -3616,6 +3616,14 @@ dependencies = [
  "slotmap",
  "tokio",
  "tracing-subscriber",
+ "tui-view",
+]
+
+[[package]]
+name = "tui-view"
+version = "0.1.0"
+dependencies = [
+ "ratatui",
 ]
 
 [[package]]
