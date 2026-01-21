@@ -6,5 +6,6 @@ publish = false
 
 [dependencies]
 async-imap = { workspace = true }
+imap-utf7 = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["io-util"] }

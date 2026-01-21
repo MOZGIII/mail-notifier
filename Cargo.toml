@@ -10,6 +10,7 @@ imap-checker = { path = "crates/lib/imap-checker" }
 imap-tls = { path = "crates/lib/imap-tls" }
 imap-tls-core = { path = "crates/lib/imap-tls-core" }
 imap-tls-rustls = { path = "crates/lib/imap-tls-rustls" }
+imap-utf7 = { path = "crates/lib/imap-utf7" }
 mailbox-monitor = { path = "crates/lib/mailbox-monitor" }
 
 async-imap = { version = "0.11", default-features = false, features = ["runtime-tokio"] }

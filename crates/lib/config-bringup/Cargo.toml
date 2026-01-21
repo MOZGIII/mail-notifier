@@ -7,4 +7,5 @@ publish = false
 [dependencies]
 config-core = { workspace = true }
 imap-tls = { workspace = true }
+imap-utf7 = { workspace = true }
 mailbox-monitor = { workspace = true }
