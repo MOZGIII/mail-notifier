@@ -11,26 +11,22 @@ async fn main() -> color_eyre::eyre::Result<()> {
 
     let mut join_set = tokio::task::JoinSet::new();
 
-    for server in config.servers {
+    for server in &config.servers {
         for mailbox in &server.mailboxes {
             let label = format!("{} / {}", server.name, mailbox.name);
-            let server = server.clone();
-            let mailbox = mailbox.clone();
-            let label_clone = label.clone();
 
+            let config = config_bringup::build_monitor_config(server, mailbox);
             join_set.spawn(async move {
-                let notify = move |counts: imap_checker::MailboxCounts| {
-                    let label = label_clone.clone();
-                    async move {
-                        println!("{} total={} unread={}", label, counts.total, counts.unread);
-                    }
+                let label = label.as_str();
+                let notify = move |counts: imap_checker::MailboxCounts| async move {
+                    println!("{} total={} unread={}", label, counts.total, counts.unread);
                 };
 
-                let config = config_bringup::build_monitor_config(&server, &mailbox);
                 mailbox_monitor::monitor_mailbox_counts(config, notify).await
             });
         }
     }
+    drop(config);
 
     while let Some(result) = join_set.join_next().await {
         result??;
