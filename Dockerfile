@@ -42,10 +42,10 @@ RUN --mount=type=cache,target=target,id=${TARGETPLATFORM} \
   mkdir -p /artifacts \
   && cd target/release \
   && cp -t /artifacts \
-  main \
+  tui \
   && ls -la /artifacts
 
-FROM --platform=${TARGETPLATFORM} runtime AS main
-COPY --from=build /artifacts/main /usr/local/bin
-RUN ldd /usr/local/bin/main
-CMD ["main"]
+FROM --platform=${TARGETPLATFORM} runtime AS tui
+COPY --from=build /artifacts/tui /usr/local/bin
+RUN ldd /usr/local/bin/tui
+CMD ["tui"]

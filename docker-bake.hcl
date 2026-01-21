@@ -1,6 +1,6 @@
 variable "TARGETS" {
   type = list(string)
-  default = ["main"]
+  default = ["tui"]
 }
 
 group "default" {
