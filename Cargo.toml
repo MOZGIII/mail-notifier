@@ -11,6 +11,8 @@ imap-tls = { path = "crates/lib/imap-tls" }
 imap-tls-core = { path = "crates/lib/imap-tls-core" }
 imap-tls-rustls = { path = "crates/lib/imap-tls-rustls" }
 imap-utf7 = { path = "crates/lib/imap-utf7" }
+keyring-bridge = { path = "crates/lib/keyring-bridge" }
+keyring-password = { path = "crates/lib/keyring-password" }
 mailbox-monitor = { path = "crates/lib/mailbox-monitor" }
 
 apple-native-keyring-store = "0.2.2"

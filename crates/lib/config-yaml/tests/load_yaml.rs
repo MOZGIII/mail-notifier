@@ -17,7 +17,10 @@ async fn loads_yaml_fixture() {
     assert_eq!(server.tls.mode, config_core::TlsMode::Implicit);
     assert_eq!(server.tls.server_name.as_deref(), Some("imap.example.com"));
     assert_eq!(server.credentials.username, "user@example.com");
-    assert_eq!(server.credentials.password, "secret");
+    assert!(matches!(
+        server.credentials.password,
+        config_core::PasswordSource::Plain(ref value) if value == "secret"
+    ));
     assert_eq!(server.mailboxes.len(), 2);
     assert_eq!(server.mailboxes[0].name, "INBOX");
     assert_eq!(server.mailboxes[0].idle_timeout_secs, Some(300));

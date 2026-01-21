@@ -568,7 +568,11 @@ dependencies = [
  "config-core",
  "imap-tls",
  "imap-utf7",
+ "keyring-bridge",
+ "keyring-password",
  "mailbox-monitor",
+ "thiserror 2.0.18",
+ "tokio",
 ]
 
 [[package]]

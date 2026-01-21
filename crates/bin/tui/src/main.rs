@@ -10,6 +10,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
 
     let config_path: std::path::PathBuf = envfury::must("MAIL_NOTIFIER_CONFIG")?;
     let config = config_yaml::load_from_path(&config_path).await?;
+    let _keyring_guard = config_bringup::init_keyring_if_needed(&config)?;
 
     let mut join_set = tokio::task::JoinSet::new();
     let (sender, mut receiver) = tokio::sync::mpsc::channel(128);
@@ -26,7 +27,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
             });
 
             let sender = sender.clone();
-            let config = config_bringup::build_monitor_config(server, mailbox);
+            let config = config_bringup::build_monitor_config(server, mailbox).await?;
             join_set.spawn(async move {
                 let notify = move |counts| {
                     let sender = sender.clone();
