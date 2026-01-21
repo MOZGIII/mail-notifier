@@ -74,6 +74,21 @@ pub async fn build_monitor_config(
     })
 }
 
+/// Build resolved mailbox monitor configs for all servers/mailboxes in a config.
+pub async fn build_monitor_configs(
+    config: &config_core::Config,
+) -> Result<Vec<mailbox_monitor::MailboxMonitorConfig>, ResolveCredentialsError> {
+    let mut configs = Vec::new();
+
+    for server in &config.servers {
+        for mailbox in &server.mailboxes {
+            configs.push(build_monitor_config(server, mailbox).await?);
+        }
+    }
+
+    Ok(configs)
+}
+
 /// Resolve the password from config, including keyring lookups.
 async fn resolve_password(
     credentials: &config_core::Credentials,

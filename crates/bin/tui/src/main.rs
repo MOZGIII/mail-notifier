@@ -8,6 +8,8 @@ async fn main() -> color_eyre::eyre::Result<()> {
     let config_path: std::path::PathBuf = envfury::must("MAIL_NOTIFIER_CONFIG")?;
     let config = config_yaml::load_from_path(&config_path).await?;
     let _keyring_guard = config_bringup::init_keyring_if_needed(&config)?;
+    let monitor_configs = config_bringup::build_monitor_configs(&config).await?;
+    drop(config);
 
     let mut join_set = tokio::task::JoinSet::new();
     let (sender, mut receiver) = tokio::sync::mpsc::channel(128);
@@ -15,29 +17,25 @@ async fn main() -> color_eyre::eyre::Result<()> {
     let mut entries: slotmap::SlotMap<slotmap::DefaultKey, tui_view::EntryState> =
         slotmap::SlotMap::with_key();
 
-    for server in &config.servers {
-        for mailbox in &server.mailboxes {
-            let label = format!("{} / {}", server.name, mailbox.name);
-            let entry_key = entries.insert(tui_view::EntryState {
-                name: label,
-                unread: 0,
-            });
+    for config in monitor_configs {
+        let label = format!("{} / {}", config.server_name, config.mailbox);
+        let entry_key = entries.insert(tui_view::EntryState {
+            name: label,
+            unread: 0,
+        });
 
-            let sender = sender.clone();
-            let config = config_bringup::build_monitor_config(server, mailbox).await?;
-            join_set.spawn(async move {
-                let notify = move |counts| {
-                    let sender = sender.clone();
-                    async move {
-                        let _ = sender.send(MailboxUpdate { entry_key, counts }).await;
-                    }
-                };
+        let sender = sender.clone();
+        join_set.spawn(async move {
+            let notify = move |counts| {
+                let sender = sender.clone();
+                async move {
+                    let _ = sender.send(MailboxUpdate { entry_key, counts }).await;
+                }
+            };
 
-                mailbox_monitor::monitor_mailbox_counts(config, notify).await
-            });
-        }
+            mailbox_monitor::monitor_mailbox_counts(config, notify).await
+        });
     }
-    drop(config);
 
     drop(sender);
 
