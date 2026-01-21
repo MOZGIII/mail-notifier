@@ -4,14 +4,14 @@ Purpose: give AI coding agents the minimal, actionable context to be productive 
 
 - **Project layout (big picture):** This is a Rust workspace. CLI binaries live under `crates/bin/*`; shared library code lives under `crates/lib/*` (for example the IMAP logic in `crates/lib/imap-checker`). The top-level Cargo.toml defines the workspace and CI/packaging expects the workspace layout.
 
-- **Primary binary:** See [crates/bin/main/src/main.rs](../crates/bin/main/src/main.rs) — binaries are intentionally thin: keep business logic in the library crates and call into them from `main`.
+- **Primary binary:** See [crates/bin/tui/src/main.rs](../crates/bin/tui/src/main.rs) — binaries are intentionally thin: keep business logic in the library crates and call into them from `main`.
 
 - **Key library crate:** See [crates/lib/imap-checker](../crates/lib/imap-checker) for core email-checking logic. Prefer to add/modify logic here rather than in the `bin` crate.
 
 - **Build / test / run commands:**
   - Build whole workspace: `cargo build --workspace`
-  - Build release binary: `cargo build -p main --release` or `cd crates/bin/main && cargo build --release`
-  - Run binary locally: `cargo run -p main` or `cargo run --bin main` from workspace root
+  - Build release binary: `cargo build -p tui --release` or `cd crates/bin/tui && cargo build --release`
+  - Run binary locally: `cargo run -p tui` or `cargo run --bin tui` from workspace root
   - Run tests: `cargo test --workspace`
 
 - **Toolchain & linting choices:**
@@ -48,11 +48,11 @@ Purpose: give AI coding agents the minimal, actionable context to be productive 
   - Do not move core logic into `bin` crates; keep it in `crates/lib/*`.
 
 - **Examples (actionable edits):**
-  - To add a feature that checks a new IMAP flag, implement logic in [crates/lib/imap-checker/src](../crates/lib/imap-checker/src) and add unit tests there, then call it from [crates/bin/main/src/main.rs](../crates/bin/main/src/main.rs).
+  - To add a feature that checks a new IMAP flag, implement logic in [crates/lib/imap-checker/src](../crates/lib/imap-checker/src) and add unit tests there, then call it from [crates/bin/tui/src/main.rs](../crates/bin/tui/src/main.rs).
   - To add a new CLI binary, create `crates/bin/<name>/Cargo.toml` and `src/main.rs`, then update `build-utils/list-bin-targets` if it enumerates binaries.
 
 - **Quick debugging tips:**
-  - Use `RUST_LOG=debug cargo run -p main` to enable debug logging where supported.
+  - Use `RUST_LOG=debug cargo run -p tui` to enable debug logging where supported.
   - Run `cargo test -p imap-checker -- --nocapture` to see test output in failing cases.
 
 If anything above is unclear or you want more examples drawn from specific files, say which area (build, a crate, or CI) and I will expand this file.
