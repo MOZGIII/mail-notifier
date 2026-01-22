@@ -1,0 +1,12 @@
+[package]
+name = "monitoring-engine"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+exp-backoff = { workspace = true }
+imap-checker = { workspace = true }
+imap-monitor = { workspace = true }
+supervisor = { workspace = true }
+tokio = { workspace = true, features = ["rt"] }

@@ -10,9 +10,8 @@ config-bringup = { workspace = true }
 config-yaml = { workspace = true }
 crossterm = { workspace = true }
 envfury = { workspace = true }
-exp-backoff = { workspace = true }
-imap-checker = { workspace = true }
 imap-monitor = { workspace = true }
+monitoring-engine = { workspace = true }
 ratatui = { workspace = true }
 slotmap = { workspace = true }
 supervisor = { workspace = true }
