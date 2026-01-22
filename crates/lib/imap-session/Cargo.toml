@@ -6,7 +6,6 @@ publish = false
 
 [dependencies]
 async-imap = { workspace = true }
-imap-checker = { workspace = true }
 imap-tls = { workspace = true }
 imap-tls-rustls = { workspace = true }
 thiserror = { workspace = true }

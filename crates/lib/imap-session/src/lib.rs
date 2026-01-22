@@ -28,25 +28,21 @@ pub struct SetupParams<'a> {
 /// Errors returned while monitoring a mailbox.
 #[derive(Debug, thiserror::Error)]
 pub enum SetupError {
-    /// Network I/O error.
-    #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error),
+    /// TCP connection error.
+    #[error("TCP connection error: {0}")]
+    TcpConnect(#[source] std::io::Error),
 
-    /// TLS connector error.
-    #[error("TLS connector error: {0}")]
-    Connector(#[from] imap_tls_rustls::TlsConnectError),
+    /// IMAP TLS connector error.
+    #[error("IMAP TLS connector error: {0}")]
+    ImapTlsConnector(#[source] imap_tls_rustls::TlsConnectError),
 
-    /// IMAP connection error.
-    #[error("IMAP connection error: {0}")]
-    Connect(#[from] imap_tls::ConnectError<imap_tls_rustls::TlsConnectError>),
+    /// IMAP TLS connection error.
+    #[error("IMAP TLS connection error: {0}")]
+    ImapTlsConnect(#[source] imap_tls::ConnectError<imap_tls_rustls::TlsConnectError>),
 
     /// IMAP login error.
     #[error("IMAP login error: {0}")]
-    Login(#[from] async_imap::error::Error),
-
-    /// IMAP monitor error.
-    #[error("IMAP monitor error: {0}")]
-    Monitor(#[from] imap_checker::MonitorError),
+    Login(#[source] async_imap::error::Error),
 }
 
 /// Connect and login to set up an IMAP session.
@@ -67,14 +63,19 @@ pub async fn setup(params: SetupParams<'_>) -> Result<Session, SetupError> {
         "setting up IMAP session"
     );
 
-    let tcp_stream = tokio::net::TcpStream::connect((host, port)).await?;
-    let tls_connector = imap_tls_rustls::connector()?;
-    let client = imap_tls::connect(tcp_stream, tls_server_name, tls_mode, tls_connector).await?;
+    let tcp_stream = tokio::net::TcpStream::connect((host, port))
+        .await
+        .map_err(SetupError::TcpConnect)?;
+    let tls_connector = imap_tls_rustls::connector().map_err(SetupError::ImapTlsConnector)?;
+    let client = imap_tls::connect(tcp_stream, tls_server_name, tls_mode, tls_connector)
+        .await
+        .map_err(SetupError::ImapTlsConnect)?;
 
     let session = client
         .login(username, password)
         .await
-        .map_err(|(err, _client)| err)?;
+        .map_err(|(err, _client)| err)
+        .map_err(SetupError::Login)?;
 
     Ok(session)
 }
