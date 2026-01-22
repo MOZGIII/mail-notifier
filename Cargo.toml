@@ -6,6 +6,7 @@ members = ["crates/*/*"]
 config-bringup = { path = "crates/lib/config-bringup" }
 config-core = { path = "crates/lib/config-core" }
 config-yaml = { path = "crates/lib/config-yaml" }
+exp-backoff = { path = "crates/lib/exp-backoff" }
 imap-checker = { path = "crates/lib/imap-checker" }
 imap-tls = { path = "crates/lib/imap-tls" }
 imap-tls-core = { path = "crates/lib/imap-tls-core" }
@@ -23,7 +24,8 @@ color-eyre = "0.6"
 crossterm = "0.29.0"
 dbus-secret-service-keyring-store = "0.3.3"
 envfury = "0.2"
-futures = "0.3"
+futures = { version = "0.3", default-features = false }
+futures-util = { version = "0.3", default-features = false }
 keyring-core = "0.7.2"
 ratatui = "0.30.0"
 rustls = { version = "0.23", default-features = false, features = ["logging", "ring", "std", "tls12"] }
