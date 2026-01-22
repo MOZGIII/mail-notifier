@@ -12,6 +12,9 @@ pub struct EntryState {
 
     /// Unread message count.
     pub unread: u32,
+
+    /// Whether the mailbox is active or not.
+    pub active: bool,
 }
 
 /// Render the main UI frame.
@@ -37,7 +40,15 @@ where
         } else {
             entries
                 .iter()
-                .map(|entry| ListItem::new(format!("{} — {} new", entry.name, entry.unread)))
+                .map(|entry| {
+                    ListItem::new(format!("{} — {} new", entry.name, entry.unread)).style({
+                        let mut s = Style::new();
+                        if !entry.active {
+                            s = s.italic();
+                        }
+                        s
+                    })
+                })
                 .collect()
         };
 

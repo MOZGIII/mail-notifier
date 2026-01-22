@@ -12,7 +12,8 @@ async fn main() -> color_eyre::eyre::Result<()> {
     drop(config);
 
     let mut join_set = tokio::task::JoinSet::new();
-    let (sender, mut receiver) = tokio::sync::mpsc::channel(128);
+    let (mailbox_sender, mut mailbox_receiver) = tokio::sync::mpsc::channel(128);
+    let (supervisor_sender, mut supervisor_receiver) = tokio::sync::mpsc::channel(128);
 
     let mut entries: slotmap::SlotMap<slotmap::DefaultKey, tui_view::EntryState> =
         slotmap::SlotMap::with_key();
@@ -21,23 +22,57 @@ async fn main() -> color_eyre::eyre::Result<()> {
         let label = format!("{} / {}", config.server_name, config.mailbox);
         let entry_key = entries.insert(tui_view::EntryState {
             name: label,
+            active: false,
             unread: 0,
         });
 
-        let sender = sender.clone();
+        let mailbox_sender = mailbox_sender.clone();
+        let supervisor_sender = supervisor_sender.clone();
         join_set.spawn(async move {
-            let notify = move |counts| {
-                let sender = sender.clone();
+            let work = move || {
+                let mailbox_sender = mailbox_sender.clone();
+                let config = config.clone();
+                let mailbox_notify = move |counts| {
+                    let mailbox_sender = mailbox_sender.clone();
+                    async move {
+                        let _ = mailbox_sender
+                            .send(MailboxUpdate { entry_key, counts })
+                            .await;
+                    }
+                };
+
+                std::panic::AssertUnwindSafe(async move {
+                    imap_monitor::monitor(config, mailbox_notify).await
+                })
+            };
+
+            let retries_backoff = exp_backoff::State {
+                factor: 2,
+                max: core::time::Duration::from_secs(30),
+                value: core::time::Duration::from_secs(1),
+            };
+
+            let supervisor_notify = move |event| {
+                let supervisor_sender = supervisor_sender.clone();
                 async move {
-                    let _ = sender.send(MailboxUpdate { entry_key, counts }).await;
+                    let _ = supervisor_sender
+                        .send(SupervisorUpdate { entry_key, event })
+                        .await;
                 }
             };
 
-            imap_monitor::monitor(config, notify).await
+            supervisor::run(supervisor::Params {
+                work,
+                notifier: supervisor_notify,
+                sleep: tokio::time::sleep,
+                retries_backoff,
+            })
+            .await
         });
     }
 
-    drop(sender);
+    drop(mailbox_sender);
+    drop(supervisor_sender);
 
     tracing::info!(message = "Entering UI...");
 
@@ -71,15 +106,22 @@ async fn main() -> color_eyre::eyre::Result<()> {
                     _ => {}
                 }
             }
-            Some(update) = receiver.recv() => {
+            Some(update) = mailbox_receiver.recv() => {
                 if let Some(entry) = entries.get_mut(update.entry_key) {
                     entry.unread = update.counts.unread;
                 }
 
                 tui_view::render(&mut terminal, entries.values())?;
             }
+            Some(update) = supervisor_receiver.recv() => {
+                if let Some(entry) = entries.get_mut(update.entry_key) {
+                    entry.active = matches!(update.event, supervisor::SupervisorEvent::Started);
+                }
+
+                tui_view::render(&mut terminal, entries.values())?;
+            }
             Some(result) = join_set.join_next() => {
-                result??;
+                result.unwrap();
             }
             else => break,
         }
@@ -93,11 +135,21 @@ async fn main() -> color_eyre::eyre::Result<()> {
 }
 
 /// Update payload for a mailbox.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct MailboxUpdate {
     /// Key for the UI entry.
     entry_key: slotmap::DefaultKey,
 
     /// Mailbox counts.
     counts: imap_checker::MailboxCounts,
+}
+
+/// Update payload for a supervised task.
+#[derive(Debug)]
+struct SupervisorUpdate {
+    /// Key for the UI entry.
+    entry_key: slotmap::DefaultKey,
+
+    /// The supervisor event.
+    event: supervisor::SupervisorEvent<core::convert::Infallible, imap_monitor::MonitorError>,
 }

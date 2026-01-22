@@ -16,6 +16,7 @@ imap-tls-rustls = { path = "crates/lib/imap-tls-rustls" }
 imap-utf7 = { path = "crates/lib/imap-utf7" }
 keyring-bridge = { path = "crates/lib/keyring-bridge" }
 keyring-password = { path = "crates/lib/keyring-password" }
+supervisor = { path = "crates/lib/supervisor" }
 tui-crossterm-guard = { path = "crates/lib/tui-crossterm-guard" }
 tui-view = { path = "crates/lib/tui-view" }
 
