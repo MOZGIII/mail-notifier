@@ -4,7 +4,7 @@ use std::time::Duration;
 
 /// Fully resolved mailbox monitoring configuration.
 #[derive(Debug, Clone, PartialEq)]
-pub struct MailboxMonitorConfig {
+pub struct Config {
     /// Human-friendly name for logging and identification.
     pub server_name: String,
 
@@ -35,33 +35,21 @@ pub struct MailboxMonitorConfig {
 
 /// Errors returned while monitoring a mailbox.
 #[derive(Debug, thiserror::Error)]
-pub enum MonitorMailboxError {
-    /// Network I/O error.
-    #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error),
-
+pub enum MonitorError {
     /// TLS connector error.
-    #[error("TLS connector error: {0}")]
-    Connector(#[from] imap_tls_rustls::TlsConnectError),
-
-    /// IMAP connection error.
-    #[error("IMAP connection error: {0}")]
-    Connect(#[from] imap_tls::ConnectError<imap_tls_rustls::TlsConnectError>),
-
-    /// IMAP login error.
-    #[error("IMAP login error: {0}")]
-    Login(#[from] async_imap::error::Error),
+    #[error("IMAP session setup error: {0}")]
+    SessionSetup(#[source] imap_session::SetupError),
 
     /// IMAP monitor error.
     #[error("IMAP monitor error: {0}")]
-    Monitor(#[from] imap_checker::MonitorError),
+    Monitor(#[source] imap_checker::MonitorError),
 }
 
 /// Connect and monitor a mailbox based on provided settings.
-pub async fn monitor_mailbox_counts<F, Fut>(
-    config: MailboxMonitorConfig,
+pub async fn monitor<F, Fut>(
+    config: Config,
     notify: F,
-) -> Result<(), MonitorMailboxError>
+) -> Result<core::convert::Infallible, MonitorError>
 where
     F: FnMut(imap_checker::MailboxCounts) -> Fut + Send,
     Fut: std::future::Future<Output = ()> + Send,
@@ -75,23 +63,18 @@ where
         "starting IMAP monitor"
     );
 
-    let tcp_stream = tokio::net::TcpStream::connect((config.host.as_str(), config.port)).await?;
-    let tls_connector = imap_tls_rustls::connector()?;
-    let client = imap_tls::connect(
-        tcp_stream,
-        &config.tls_server_name,
-        config.tls_mode,
-        tls_connector,
-    )
-    .await?;
-
-    let session = client
-        .login(&config.username, &config.password)
-        .await
-        .map_err(|(err, _client)| err)?;
+    let session = imap_session::setup(imap_session::SetupParams {
+        host: &config.host,
+        port: config.port,
+        tls_mode: config.tls_mode,
+        tls_server_name: &config.tls_server_name,
+        username: &config.username,
+        password: &config.password,
+    })
+    .await
+    .map_err(MonitorError::SessionSetup)?;
 
     imap_checker::monitor_mailbox_counts(session, &config.mailbox, config.idle_timeout, notify)
-        .await?;
-
-    Ok(())
+        .await
+        .map_err(MonitorError::Monitor)
 }

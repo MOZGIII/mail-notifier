@@ -490,7 +490,7 @@ dependencies = [
  "config-yaml",
  "envfury",
  "imap-checker",
- "mailbox-monitor",
+ "imap-monitor",
  "tokio",
  "tracing-subscriber",
 ]
@@ -566,11 +566,11 @@ name = "config-bringup"
 version = "0.1.0"
 dependencies = [
  "config-core",
+ "imap-monitor",
  "imap-tls",
  "imap-utf7",
  "keyring-bridge",
  "keyring-password",
- "mailbox-monitor",
  "thiserror 2.0.18",
  "tokio",
 ]
@@ -1616,12 +1616,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "imap-monitor"
+version = "0.1.0"
+dependencies = [
+ "imap-checker",
+ "imap-session",
+ "imap-tls",
+ "imap-utf7",
+ "thiserror 2.0.18",
+ "tracing",
+]
+
+[[package]]
 name = "imap-proto"
 version = "0.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba1f9b30846c3d04371159ef3a0413ce7c1ae0a8c619cd255c60b3d902553f22"
 dependencies = [
  "nom",
+]
+
+[[package]]
+name = "imap-session"
+version = "0.1.0"
+dependencies = [
+ "async-imap",
+ "imap-checker",
+ "imap-tls",
+ "imap-tls-rustls",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -1915,20 +1940,6 @@ checksum = "c0aeb26bf5e836cc1c341c8106051b573f1766dfa05aa87f0b98be5e51b02303"
 dependencies = [
  "nix",
  "winapi",
-]
-
-[[package]]
-name = "mailbox-monitor"
-version = "0.1.0"
-dependencies = [
- "async-imap",
- "imap-checker",
- "imap-tls",
- "imap-tls-rustls",
- "imap-utf7",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -3623,7 +3634,7 @@ dependencies = [
  "crossterm",
  "envfury",
  "imap-checker",
- "mailbox-monitor",
+ "imap-monitor",
  "ratatui",
  "slotmap",
  "tokio",

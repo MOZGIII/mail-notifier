@@ -1,15 +1,13 @@
 [package]
-name = "mailbox-monitor"
+name = "imap-monitor"
 version = "0.1.0"
 edition = "2024"
 publish = false
 
 [dependencies]
-async-imap = { workspace = true }
 imap-checker = { workspace = true }
+imap-session = { workspace = true }
 imap-tls = { workspace = true }
-imap-tls-rustls = { workspace = true }
 imap-utf7 = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, features = ["net"] }
 tracing = { workspace = true }

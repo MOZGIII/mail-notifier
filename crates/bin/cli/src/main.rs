@@ -22,7 +22,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
                 println!("{} total={} unread={}", label, counts.total, counts.unread);
             };
 
-            mailbox_monitor::monitor_mailbox_counts(config, notify).await
+            imap_monitor::monitor(config, notify).await
         });
     }
     while let Some(result) = join_set.join_next().await {

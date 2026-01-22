@@ -1,0 +1,14 @@
+[package]
+name = "imap-session"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+async-imap = { workspace = true }
+imap-checker = { workspace = true }
+imap-tls = { workspace = true }
+imap-tls-rustls = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["net"] }
+tracing = { workspace = true }
