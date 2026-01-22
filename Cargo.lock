@@ -1641,7 +1641,6 @@ name = "imap-session"
 version = "0.1.0"
 dependencies = [
  "async-imap",
- "imap-checker",
  "imap-tls",
  "imap-tls-rustls",
  "thiserror 2.0.18",
