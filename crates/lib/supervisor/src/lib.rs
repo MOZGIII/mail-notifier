@@ -14,14 +14,17 @@ type PanicPayload = alloc::boxed::Box<dyn core::any::Any + Send + 'static>;
 
 /// Event sent to the notifier.
 #[derive(Debug)]
-pub enum SupervisorEvent<E> {
+pub enum SupervisorEvent<T, E> {
     /// The work is about to be invoked.
     Started,
 
     /// The work has completed without an error or panic.
     ///
     /// It won't be restarted.
-    Done,
+    Done {
+        /// The returned value.
+        value: T,
+    },
 
     /// The work returned an error.
     ///
@@ -63,12 +66,12 @@ pub struct Params<Work, Notifier, Sleep> {
 }
 
 /// Run once: notify start, run work, notify result.
-pub async fn run<Work, WorkFut, Notifier, NotifierFut, Sleep, SleepFut, Error>(
+pub async fn run<Work, WorkFut, Notifier, NotifierFut, Sleep, SleepFut, Value, Error>(
     mut params: Params<Work, Notifier, Sleep>,
 ) where
     Work: FnMut() -> WorkFut,
-    WorkFut: Future<Output = Result<(), Error>> + UnwindSafe,
-    Notifier: FnMut(SupervisorEvent<Error>) -> NotifierFut,
+    WorkFut: Future<Output = Result<Value, Error>> + UnwindSafe,
+    Notifier: FnMut(SupervisorEvent<Value, Error>) -> NotifierFut,
     NotifierFut: Future<Output = ()>,
     Sleep: FnMut(Duration) -> SleepFut,
     SleepFut: Future<Output = ()>,
@@ -81,8 +84,8 @@ pub async fn run<Work, WorkFut, Notifier, NotifierFut, Sleep, SleepFut, Error>(
         let result = work_future.catch_unwind().await;
 
         let delay = match result {
-            Ok(Ok(())) => {
-                (params.notifier)(SupervisorEvent::Done).await;
+            Ok(Ok(value)) => {
+                (params.notifier)(SupervisorEvent::Done { value }).await;
                 return;
             }
             Ok(Err(error)) => {
