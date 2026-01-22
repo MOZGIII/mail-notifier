@@ -5,10 +5,9 @@ allow = [
   "Apache-2.0",
   "BSD-3-Clause",
   "CDLA-Permissive-2.0",
-  "CC0-1.0",
   "ISC",
   "MIT",
-  "OpenSSL",
+  "MPL-2.0",
   "Zlib",
   "Unlicense",
   "Unicode-3.0",
@@ -33,3 +32,39 @@ reason = "prefer ring"
 [[advisories.ignore]]
 id = "RUSTSEC-2025-0134"
 reason = "rustls-pemfile is an unmaintained transitive dependency via testcontainers/bollard; no safe upgrade available."
+
+[[advisories.ignore]]
+id = "RUSTSEC-2024-0413"
+reason = "gtk-rs GTK3 bindings are unmaintained; required for tray functionality, no safe upgrade available."
+
+[[advisories.ignore]]
+id = "RUSTSEC-2024-0416"
+reason = "gtk-rs GTK3 bindings are unmaintained; required for tray functionality, no safe upgrade available."
+
+[[advisories.ignore]]
+id = "RUSTSEC-2024-0412"
+reason = "gtk-rs GTK3 bindings are unmaintained; required for tray functionality, no safe upgrade available."
+
+[[advisories.ignore]]
+id = "RUSTSEC-2024-0418"
+reason = "gtk-rs GTK3 bindings are unmaintained; required for tray functionality, no safe upgrade available."
+
+[[advisories.ignore]]
+id = "RUSTSEC-2024-0411"
+reason = "gtk-rs GTK3 bindings are unmaintained; required for tray functionality, no safe upgrade available."
+
+[[advisories.ignore]]
+id = "RUSTSEC-2024-0415"
+reason = "gtk-rs GTK3 bindings are unmaintained; required for tray functionality, no safe upgrade available."
+
+[[advisories.ignore]]
+id = "RUSTSEC-2024-0420"
+reason = "gtk-rs GTK3 bindings are unmaintained; required for tray functionality, no safe upgrade available."
+
+[[advisories.ignore]]
+id = "RUSTSEC-2024-0419"
+reason = "gtk-rs GTK3 bindings are unmaintained; required for tray functionality, no safe upgrade available."
+
+[[advisories.ignore]]
+id = "RUSTSEC-2024-0370"
+reason = "proc-macro-error is unmaintained; transitive dependency of GTK3 bindings, no safe upgrade available."
