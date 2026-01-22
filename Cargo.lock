@@ -489,9 +489,10 @@ dependencies = [
  "config-bringup",
  "config-yaml",
  "envfury",
- "imap-checker",
  "imap-monitor",
+ "monitoring-engine",
  "tokio",
+ "tracing",
  "tracing-subscriber",
 ]
 
@@ -2000,6 +2001,17 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "monitoring-engine"
+version = "0.1.0"
+dependencies = [
+ "exp-backoff",
+ "imap-checker",
+ "imap-monitor",
+ "supervisor",
+ "tokio",
 ]
 
 [[package]]
@@ -3632,9 +3644,8 @@ dependencies = [
  "config-yaml",
  "crossterm",
  "envfury",
- "exp-backoff",
- "imap-checker",
  "imap-monitor",
+ "monitoring-engine",
  "ratatui",
  "slotmap",
  "supervisor",
