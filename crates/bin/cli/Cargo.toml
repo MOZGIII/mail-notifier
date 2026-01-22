@@ -10,6 +10,6 @@ config-bringup = { workspace = true }
 config-yaml = { workspace = true }
 envfury = { workspace = true }
 imap-checker = { workspace = true }
-mailbox-monitor = { workspace = true }
+imap-monitor = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
 tracing-subscriber = { workspace = true }

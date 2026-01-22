@@ -6,10 +6,10 @@ publish = false
 
 [dependencies]
 config-core = { workspace = true }
+imap-monitor = { workspace = true }
 imap-tls = { workspace = true }
 imap-utf7 = { workspace = true }
 keyring-bridge = { workspace = true }
 keyring-password = { workspace = true }
-mailbox-monitor = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

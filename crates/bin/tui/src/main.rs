@@ -33,7 +33,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
                 }
             };
 
-            mailbox_monitor::monitor_mailbox_counts(config, notify).await
+            imap_monitor::monitor(config, notify).await
         });
     }
 

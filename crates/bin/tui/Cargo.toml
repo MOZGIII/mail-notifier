@@ -11,7 +11,7 @@ config-yaml = { workspace = true }
 crossterm = { workspace = true }
 envfury = { workspace = true }
 imap-checker = { workspace = true }
-mailbox-monitor = { workspace = true }
+imap-monitor = { workspace = true }
 ratatui = { workspace = true }
 slotmap = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }

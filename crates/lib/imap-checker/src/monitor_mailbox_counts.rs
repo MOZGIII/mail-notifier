@@ -22,7 +22,7 @@ pub async fn monitor_mailbox_counts<S, F, Fut>(
     mailbox: &imap_utf7::ImapUtf7Str,
     idle_timeout: std::time::Duration,
     mut notify: F,
-) -> Result<(), MonitorError>
+) -> Result<core::convert::Infallible, MonitorError>
 where
     S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + std::fmt::Debug,
     F: FnMut(crate::MailboxCounts) -> Fut + Send,

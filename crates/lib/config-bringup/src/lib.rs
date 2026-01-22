@@ -95,14 +95,14 @@ pub async fn bringup_server_config(
 pub async fn bringup_monitor_config(
     server: &config_core::ServerConfig,
     mailbox: &config_core::MailboxConfig,
-) -> Result<mailbox_monitor::MailboxMonitorConfig, ResolveCredentialsError> {
+) -> Result<imap_monitor::Config, ResolveCredentialsError> {
     let server_config = bringup_server_config(server).await?;
     let idle_timeout_secs = mailbox
         .idle_timeout_secs
         .or(server.idle_timeout_secs)
         .unwrap_or(DEFAULT_IDLE_TIMEOUT_SECS);
 
-    Ok(mailbox_monitor::MailboxMonitorConfig {
+    Ok(imap_monitor::Config {
         server_name: server_config.server_name,
         host: server_config.host,
         port: server_config.port,
@@ -118,7 +118,7 @@ pub async fn bringup_monitor_config(
 /// Build resolved mailbox monitor configs for all servers/mailboxes in a config.
 pub async fn bringup_monitor_configs(
     config: &config_core::Config,
-) -> Result<Vec<mailbox_monitor::MailboxMonitorConfig>, ResolveCredentialsError> {
+) -> Result<Vec<imap_monitor::Config>, ResolveCredentialsError> {
     let mut configs = Vec::new();
 
     for server in &config.servers {
