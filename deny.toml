@@ -3,11 +3,13 @@ allow = [
   "0BSD",
   "Apache-2.0 WITH LLVM-exception",
   "Apache-2.0",
+  "BSD-2-Clause",
   "BSD-3-Clause",
   "CDLA-Permissive-2.0",
   "ISC",
   "MIT",
   "MPL-2.0",
+  "NCSA",
   "Zlib",
   "Unlicense",
   "Unicode-3.0",
@@ -68,3 +70,7 @@ reason = "gtk-rs GTK3 bindings are unmaintained; required for tray functionality
 [[advisories.ignore]]
 id = "RUSTSEC-2024-0370"
 reason = "proc-macro-error is unmaintained; transitive dependency of GTK3 bindings, no safe upgrade available."
+
+[[advisories.ignore]]
+id = "RUSTSEC-2024-0436"
+reason = "paste crate is unmaintained; transitive dependency via image/rav1e, no safe upgrade available."
