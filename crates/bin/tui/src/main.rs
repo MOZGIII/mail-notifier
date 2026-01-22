@@ -42,7 +42,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
                 };
 
                 std::panic::AssertUnwindSafe(async move {
-                    imap_monitor::monitor(config, mailbox_notify).await
+                    imap_monitor::monitor(&config, mailbox_notify).await
                 })
             };
 

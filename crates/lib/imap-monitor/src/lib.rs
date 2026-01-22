@@ -47,7 +47,7 @@ pub enum MonitorError {
 
 /// Connect and monitor a mailbox based on provided settings.
 pub async fn monitor<F, Fut>(
-    config: Config,
+    config: &Config,
     notify: F,
 ) -> Result<core::convert::Infallible, MonitorError>
 where
