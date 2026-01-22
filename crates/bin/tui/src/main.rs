@@ -39,7 +39,9 @@ async fn main() -> color_eyre::eyre::Result<()> {
 
     drop(sender);
 
-    let _guard = tui_crossterm_guard::TerminalGuard::enter()?;
+    tracing::info!(message = "Entering UI...");
+
+    let terminal_guard = tui_crossterm_guard::TerminalGuard::enter()?;
     let backend = ratatui::backend::CrosstermBackend::new(std::io::stdout());
     let mut terminal = ratatui::Terminal::new(backend)?;
     terminal.clear()?;
@@ -82,6 +84,10 @@ async fn main() -> color_eyre::eyre::Result<()> {
             else => break,
         }
     }
+
+    drop(terminal_guard);
+
+    tracing::info!(message = "Exiting...");
 
     Ok(())
 }
