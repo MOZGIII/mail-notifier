@@ -10,8 +10,7 @@ config-bringup = { workspace = true }
 config-yaml = { workspace = true }
 envfury = { workspace = true }
 futures = { workspace = true }
-imap-tls = { workspace = true }
-imap-tls-rustls = { workspace = true }
+imap-session = { workspace = true }
 imap-utf7 = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
 tracing = { workspace = true }

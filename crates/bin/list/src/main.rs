@@ -23,22 +23,15 @@ async fn main() -> color_eyre::eyre::Result<()> {
             "listing IMAP mailboxes"
         );
 
-        let tcp_stream =
-            tokio::net::TcpStream::connect((server_config.host.as_str(), server_config.port))
-                .await?;
-        let tls_connector = imap_tls_rustls::connector()?;
-        let client = imap_tls::connect(
-            tcp_stream,
-            &server_config.tls_server_name,
-            server_config.tls_mode,
-            tls_connector,
-        )
+        let mut session = imap_session::setup(imap_session::SetupParams {
+            host: &server_config.host,
+            port: server_config.port,
+            tls_mode: server_config.tls_mode,
+            tls_server_name: &server_config.tls_server_name,
+            username: &server_config.username,
+            password: &server_config.password,
+        })
         .await?;
-
-        let mut session = client
-            .login(&server_config.username, &server_config.password)
-            .await
-            .map_err(|(err, _client)| err)?;
 
         let mut list_stream = session.list(None, Some("*")).await?;
         println!("{}:", server_config.server_name);
