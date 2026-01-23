@@ -11,8 +11,8 @@ env = ["dep:envfury"]
 
 [dependencies]
 config-core = { workspace = true, features = ["serde"] }
-config-locate = { workspace = true }
 config-paths = { workspace = true }
+config-resolver = { workspace = true }
 envfury = { workspace = true, optional = true }
 serde_yaml_bw = { workspace = true }
 thiserror = { workspace = true }

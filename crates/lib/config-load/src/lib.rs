@@ -8,7 +8,9 @@ use config_core::Config;
 #[cfg(feature = "env")]
 pub async fn with_default_env_var() -> Result<Config, WithDefaultEnvVarError> {
     let env_path = envfury::maybe("MAIL_NOTIFIER_CONFIG").map_err(WithDefaultEnvVarError::Env)?;
-    with(env_path).await.map_err(WithDefaultEnvVarError::Locate)
+    with(env_path)
+        .await
+        .map_err(WithDefaultEnvVarError::Resolver)
 }
 
 /// Errors that can occur during configuration loading.
@@ -19,18 +21,18 @@ pub enum WithDefaultEnvVarError {
     #[error("config path env var read: {0}")]
     Env(#[source] envfury::Error<envfury::ValueError<<PathBuf as std::str::FromStr>::Err>>),
 
-    /// Locating configuration error.
-    #[error("locating config: {0}")]
-    Locate(#[from] config_locate::LoadError<YamlError>),
+    /// Resolving configuration error.
+    #[error(transparent)]
+    Resolver(#[from] config_resolver::LoadError<YamlError>),
 }
 
 /// Load configuration using the standard mail-notifier configuration loading process but
 /// with a custom env path value.
 pub async fn with(
     env_path: Option<PathBuf>,
-) -> Result<Config, config_locate::LoadError<YamlError>> {
+) -> Result<Config, config_resolver::LoadError<YamlError>> {
     let paths: Vec<PathBuf> = config_paths::resolve(env_path).collect();
-    let meta_config = config_locate::load(&paths, |s| serde_yaml_bw::from_str(&s)).await?;
+    let meta_config = config_resolver::load(&paths, |s| serde_yaml_bw::from_str(&s)).await?;
     Ok(meta_config.payload)
 }
 

@@ -815,19 +815,11 @@ name = "config-load"
 version = "0.1.0"
 dependencies = [
  "config-core",
- "config-locate",
  "config-paths",
+ "config-resolver",
  "envfury",
  "serde_yaml_bw",
  "thiserror 2.0.18",
-]
-
-[[package]]
-name = "config-locate"
-version = "0.1.0"
-dependencies = [
- "thiserror 2.0.18",
- "tokio",
 ]
 
 [[package]]
@@ -836,6 +828,14 @@ version = "0.1.0"
 dependencies = [
  "dirs",
  "either",
+]
+
+[[package]]
+name = "config-resolver"
+version = "0.1.0"
+dependencies = [
+ "thiserror 2.0.18",
+ "tokio",
 ]
 
 [[package]]

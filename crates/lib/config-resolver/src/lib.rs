@@ -1,4 +1,4 @@
-//! Configuration file loading.
+//! Configuration file resolving.
 
 use std::path::{Path, PathBuf};
 

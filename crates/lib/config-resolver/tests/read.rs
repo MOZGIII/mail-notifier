@@ -1,6 +1,6 @@
 //! Tests for the read function.
 
-use config_locate::{ReadError, read};
+use config_resolver::{ReadError, read};
 
 #[tokio::test]
 async fn test_read_first_file_exists() {
