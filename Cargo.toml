@@ -5,6 +5,7 @@ members = ["crates/*/*"]
 [workspace.dependencies]
 config-bringup = { path = "crates/lib/config-bringup" }
 config-core = { path = "crates/lib/config-core" }
+config-load = { path = "crates/lib/config-load" }
 config-locate = { path = "crates/lib/config-locate" }
 config-paths = { path = "crates/lib/config-paths" }
 config-yaml = { path = "crates/lib/config-yaml" }

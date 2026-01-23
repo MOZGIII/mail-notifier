@@ -1,0 +1,18 @@
+[package]
+name = "config-load"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[features]
+default = ["env"]
+
+env = ["dep:envfury"]
+
+[dependencies]
+config-core = { workspace = true }
+config-locate = { workspace = true }
+config-paths = { workspace = true }
+config-yaml = { workspace = true }
+envfury = { workspace = true, optional = true }
+thiserror = { workspace = true }
