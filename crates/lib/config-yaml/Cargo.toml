@@ -1,9 +1,0 @@
-[package]
-name = "config-yaml"
-version = "0.1.0"
-edition = "2024"
-publish = false
-
-[dependencies]
-config-core = { workspace = true, features = ["serde"] }
-serde_yaml_bw = { workspace = true }

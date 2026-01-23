@@ -8,7 +8,6 @@ config-core = { path = "crates/lib/config-core" }
 config-load = { path = "crates/lib/config-load" }
 config-locate = { path = "crates/lib/config-locate" }
 config-paths = { path = "crates/lib/config-paths" }
-config-yaml = { path = "crates/lib/config-yaml" }
 exp-backoff = { path = "crates/lib/exp-backoff" }
 icon-render = { path = "crates/lib/icon-render" }
 icon-render-loop = { path = "crates/lib/icon-render-loop" }
