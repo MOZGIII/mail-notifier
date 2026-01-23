@@ -8,8 +8,7 @@ publish = false
 color-eyre = { workspace = true }
 config-bringup = { workspace = true }
 config-core = { workspace = true }
-config-yaml = { workspace = true }
-envfury = { workspace = true }
+config-load = { workspace = true }
 keyring-bridge = { workspace = true }
 keyring-password = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

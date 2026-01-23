@@ -7,8 +7,7 @@ publish = false
 [dependencies]
 color-eyre = { workspace = true }
 config-bringup = { workspace = true }
-config-yaml = { workspace = true }
-envfury = { workspace = true }
+config-load = { workspace = true }
 imap-monitor = { workspace = true }
 monitoring-engine = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
