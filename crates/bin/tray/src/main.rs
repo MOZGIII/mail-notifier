@@ -2,6 +2,7 @@
 
 use tray_icon::{TrayIcon, TrayIconBuilder, TrayIconEvent, menu::MenuEvent};
 
+mod icon;
 mod key;
 mod menu;
 
@@ -65,6 +66,24 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
         },
     });
 
+    let (new_icon_text_sender, mut new_icon_text_receiver) = tokio::sync::mpsc::channel(128);
+
+    let proxy = event_loop.create_proxy();
+    tokio::task::spawn_blocking(move || {
+        icon_render_loop::run(icon_render_loop::Params {
+            width: icon::WIDTH,
+            height: icon::HEIGHT,
+            render_task_receiver: move || new_icon_text_receiver.blocking_recv(),
+            rendered_data_sender: move |icon| {
+                let result = proxy.send_event(UserEvent::NewIcon(icon));
+                match result {
+                    Ok(()) => std::ops::ControlFlow::Continue(()),
+                    Err(_) => std::ops::ControlFlow::Break(()),
+                }
+            },
+        })
+    });
+
     tracing::info!(message = "Starting tray...");
 
     let proxy = event_loop.create_proxy();
@@ -78,6 +97,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
     }));
 
     let mut tray_icon = None;
+    let mut total_cache = None;
 
     tokio::task::block_in_place(move || {
         event_loop.run(move |event, _, control_flow| {
@@ -85,7 +105,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
 
             match event {
                 tao::event::Event::NewEvents(tao::event::StartCause::Init) => {
-                    let icon = load_icon();
+                    let icon = icon::from_render_loop_data(icon::idle()).unwrap();
                     let menu = menu::build_menu(&entries);
                     tray_icon = Some(
                         TrayIconBuilder::new()
@@ -94,12 +114,14 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                             .build()
                             .unwrap(),
                     );
+                    update_total(&entries, &mut total_cache, new_icon_text_sender.clone());
                 }
                 tao::event::Event::UserEvent(UserEvent::MailboxUpdate(update)) => {
                     if let Some(entry) = entries.get_mut(update.entry) {
                         entry.unread = update.payload.unread;
                     }
                     update_tray_menu(&mut tray_icon, &entries);
+                    update_total(&entries, &mut total_cache, new_icon_text_sender.clone());
                 }
                 tao::event::Event::UserEvent(UserEvent::SupervisorUpdate(update)) => {
                     if let Some(entry) = entries.get_mut(update.entry) {
@@ -107,6 +129,10 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                             matches!(update.payload, supervisor::SupervisorEvent::Started);
                     }
                     update_tray_menu(&mut tray_icon, &entries);
+                    update_total(&entries, &mut total_cache, new_icon_text_sender.clone());
+                }
+                tao::event::Event::UserEvent(UserEvent::NewIcon(icon)) => {
+                    update_tray_icon(&mut tray_icon, icon)
                 }
                 tao::event::Event::UserEvent(UserEvent::TrayIcon(_event)) => {
                     // Handle tray icon events if needed
@@ -140,6 +166,9 @@ enum UserEvent {
     /// Supervisor update event.
     SupervisorUpdate(monitoring_engine::SupervisorUpdate<Key>),
 
+    /// New icon is ready.
+    NewIcon(icon_render_loop::Data),
+
     /// Tray icon event.
     TrayIcon(TrayIconEvent),
 
@@ -147,20 +176,50 @@ enum UserEvent {
     Menu(MenuEvent),
 }
 
-/// Load a simple icon for the tray.
-fn load_icon() -> tray_icon::Icon {
-    // For now, create a simple icon
-    let rgba = vec![255u8; 32 * 32 * 4];
-    tray_icon::Icon::from_rgba(rgba, 32, 32).unwrap()
-}
-
 /// Update the tray icon's menu with the current entries.
 fn update_tray_menu(
     tray_icon: &mut Option<TrayIcon>,
     entries: &slotmap::SlotMap<Key, menu::EntryState>,
 ) {
-    if let Some(tray_icon) = tray_icon {
-        let menu = menu::build_menu(entries);
-        tray_icon.set_menu(Some(Box::new(menu)));
+    let Some(tray_icon) = tray_icon else {
+        return;
+    };
+
+    let menu = menu::build_menu(entries);
+    tray_icon.set_menu(Some(Box::new(menu)));
+}
+
+/// Update the total number.
+fn update_total(
+    entries: &slotmap::SlotMap<Key, menu::EntryState>,
+    total_cache: &mut Option<u32>,
+    new_icon_image_requester: tokio::sync::mpsc::Sender<String>,
+) {
+    let total = entries.values().map(|state| state.unread).sum();
+
+    let should_redraw = total_cache.map(|cache| cache != total).unwrap_or(true);
+
+    if should_redraw {
+        *total_cache = Some(total);
+        let _ = new_icon_image_requester.blocking_send(total.to_string());
+    }
+}
+
+/// Update the tray icon's actual icon.
+fn update_tray_icon(tray_icon: &mut Option<TrayIcon>, data: icon_render_loop::Data) {
+    let Some(tray_icon) = tray_icon else {
+        return;
+    };
+
+    let icon = match icon::from_render_loop_data(data) {
+        Ok(val) => val,
+        Err(error) => {
+            tracing::debug!(?error, "unable to prepare new icon");
+            return;
+        }
+    };
+
+    if let Err(error) = tray_icon.set_icon(Some(icon)) {
+        tracing::debug!(?error, "unable to set new icon");
     }
 }

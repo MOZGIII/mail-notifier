@@ -7,6 +7,8 @@ config-bringup = { path = "crates/lib/config-bringup" }
 config-core = { path = "crates/lib/config-core" }
 config-yaml = { path = "crates/lib/config-yaml" }
 exp-backoff = { path = "crates/lib/exp-backoff" }
+icon-render = { path = "crates/lib/icon-render" }
+icon-render-loop = { path = "crates/lib/icon-render-loop" }
 imap-checker = { path = "crates/lib/imap-checker" }
 imap-monitor = { path = "crates/lib/imap-monitor" }
 imap-session = { path = "crates/lib/imap-session" }
@@ -24,11 +26,13 @@ tui-view = { path = "crates/lib/tui-view" }
 apple-native-keyring-store = "0.2.2"
 async-imap = { version = "0.11", default-features = false, features = ["runtime-tokio"] }
 color-eyre = "0.6"
+cosmic-text = "0.16"
 crossterm = "0.29.0"
 dbus-secret-service-keyring-store = "0.3.3"
 envfury = "0.2"
 futures = { version = "0.3", default-features = false }
 futures-util = { version = "0.3", default-features = false }
+image = "0.25"
 keyring-core = "0.7.2"
 ratatui = "0.30.0"
 rustls = { version = "0.23", default-features = false, features = ["logging", "ring", "std", "tls12"] }

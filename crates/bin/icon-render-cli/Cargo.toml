@@ -1,0 +1,12 @@
+[package]
+name = "icon-render-cli"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+color-eyre = { workspace = true }
+cosmic-text = { workspace = true }
+envfury = { workspace = true }
+icon-render = { workspace = true }
+image = { workspace = true }
