@@ -699,8 +699,7 @@ version = "0.1.0"
 dependencies = [
  "color-eyre",
  "config-bringup",
- "config-yaml",
- "envfury",
+ "config-load",
  "imap-monitor",
  "monitoring-engine",
  "tokio",
@@ -812,11 +811,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "config-yaml"
+name = "config-load"
 version = "0.1.0"
 dependencies = [
  "config-core",
+ "config-paths",
+ "config-resolver",
+ "envfury",
  "serde_yaml_bw",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "config-paths"
+version = "0.1.0"
+dependencies = [
+ "dirs",
+ "either",
+]
+
+[[package]]
+name = "config-resolver"
+version = "0.1.0"
+dependencies = [
  "thiserror 2.0.18",
  "tokio",
 ]
@@ -2731,8 +2748,7 @@ dependencies = [
  "color-eyre",
  "config-bringup",
  "config-core",
- "config-yaml",
- "envfury",
+ "config-load",
  "keyring-bridge",
  "keyring-password",
  "tokio",
@@ -2861,8 +2877,7 @@ version = "0.1.0"
 dependencies = [
  "color-eyre",
  "config-bringup",
- "config-yaml",
- "envfury",
+ "config-load",
  "futures",
  "imap-session",
  "imap-utf7",
@@ -5306,8 +5321,7 @@ version = "0.1.0"
 dependencies = [
  "color-eyre",
  "config-bringup",
- "config-yaml",
- "envfury",
+ "config-load",
  "icon-render-loop",
  "imap-monitor",
  "monitoring-engine",
@@ -5362,9 +5376,8 @@ version = "0.1.0"
 dependencies = [
  "color-eyre",
  "config-bringup",
- "config-yaml",
+ "config-load",
  "crossterm",
- "envfury",
  "imap-monitor",
  "monitoring-engine",
  "ratatui",

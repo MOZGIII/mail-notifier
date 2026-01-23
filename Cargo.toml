@@ -5,7 +5,9 @@ members = ["crates/*/*"]
 [workspace.dependencies]
 config-bringup = { path = "crates/lib/config-bringup" }
 config-core = { path = "crates/lib/config-core" }
-config-yaml = { path = "crates/lib/config-yaml" }
+config-load = { path = "crates/lib/config-load" }
+config-paths = { path = "crates/lib/config-paths" }
+config-resolver = { path = "crates/lib/config-resolver" }
 exp-backoff = { path = "crates/lib/exp-backoff" }
 icon-render = { path = "crates/lib/icon-render" }
 icon-render-loop = { path = "crates/lib/icon-render-loop" }
@@ -29,6 +31,8 @@ color-eyre = "0.6"
 cosmic-text = "0.16"
 crossterm = "0.29.0"
 dbus-secret-service-keyring-store = "0.3.3"
+dirs = "6.0"
+either = { version = "1", default-features = false }
 envfury = "0.2"
 futures = { version = "0.3", default-features = false }
 futures-util = { version = "0.3", default-features = false }

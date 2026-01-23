@@ -1,0 +1,18 @@
+[package]
+name = "config-load"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[features]
+default = ["env"]
+
+env = ["dep:envfury"]
+
+[dependencies]
+config-core = { workspace = true, features = ["serde"] }
+config-paths = { workspace = true }
+config-resolver = { workspace = true }
+envfury = { workspace = true, optional = true }
+serde_yaml_bw = { workspace = true }
+thiserror = { workspace = true }
