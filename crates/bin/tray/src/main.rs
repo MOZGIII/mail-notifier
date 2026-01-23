@@ -79,52 +79,55 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
 
     let mut tray_icon = None;
 
-    event_loop.run(move |event, _, control_flow| {
-        *control_flow = tao::event_loop::ControlFlow::Wait;
+    tokio::task::block_in_place(move || {
+        event_loop.run(move |event, _, control_flow| {
+            *control_flow = tao::event_loop::ControlFlow::Wait;
 
-        match event {
-            tao::event::Event::NewEvents(tao::event::StartCause::Init) => {
-                let icon = load_icon();
-                let menu = menu::build_menu(&entries);
-                tray_icon = Some(
-                    TrayIconBuilder::new()
-                        .with_menu(Box::new(menu))
-                        .with_icon(icon)
-                        .build()
-                        .unwrap(),
-                );
-            }
-            tao::event::Event::UserEvent(UserEvent::MailboxUpdate(update)) => {
-                if let Some(entry) = entries.get_mut(update.entry) {
-                    entry.unread = update.payload.unread;
+            match event {
+                tao::event::Event::NewEvents(tao::event::StartCause::Init) => {
+                    let icon = load_icon();
+                    let menu = menu::build_menu(&entries);
+                    tray_icon = Some(
+                        TrayIconBuilder::new()
+                            .with_menu(Box::new(menu))
+                            .with_icon(icon)
+                            .build()
+                            .unwrap(),
+                    );
                 }
-                update_tray_menu(&mut tray_icon, &entries);
-            }
-            tao::event::Event::UserEvent(UserEvent::SupervisorUpdate(update)) => {
-                if let Some(entry) = entries.get_mut(update.entry) {
-                    entry.active = matches!(update.payload, supervisor::SupervisorEvent::Started);
+                tao::event::Event::UserEvent(UserEvent::MailboxUpdate(update)) => {
+                    if let Some(entry) = entries.get_mut(update.entry) {
+                        entry.unread = update.payload.unread;
+                    }
+                    update_tray_menu(&mut tray_icon, &entries);
                 }
-                update_tray_menu(&mut tray_icon, &entries);
-            }
-            tao::event::Event::UserEvent(UserEvent::TrayIcon(_event)) => {
-                // Handle tray icon events if needed
-            }
-            tao::event::Event::UserEvent(UserEvent::Menu(event)) => {
-                if let Ok(key) = event.id.try_into()
-                    && let Some(entry) = entries.get(key)
-                {
-                    tracing::info!("Menu item clicked: {}", entry.name);
+                tao::event::Event::UserEvent(UserEvent::SupervisorUpdate(update)) => {
+                    if let Some(entry) = entries.get_mut(update.entry) {
+                        entry.active =
+                            matches!(update.payload, supervisor::SupervisorEvent::Started);
+                    }
+                    update_tray_menu(&mut tray_icon, &entries);
                 }
+                tao::event::Event::UserEvent(UserEvent::TrayIcon(_event)) => {
+                    // Handle tray icon events if needed
+                }
+                tao::event::Event::UserEvent(UserEvent::Menu(event)) => {
+                    if let Ok(key) = event.id.try_into()
+                        && let Some(entry) = entries.get(key)
+                    {
+                        tracing::info!("Menu item clicked: {}", entry.name);
+                    }
+                }
+                tao::event::Event::WindowEvent {
+                    event: tao::event::WindowEvent::CloseRequested,
+                    ..
+                } => {
+                    *control_flow = tao::event_loop::ControlFlow::Exit;
+                }
+                _ => {}
             }
-            tao::event::Event::WindowEvent {
-                event: tao::event::WindowEvent::CloseRequested,
-                ..
-            } => {
-                *control_flow = tao::event_loop::ControlFlow::Exit;
-            }
-            _ => {}
-        }
-    });
+        })
+    })
 }
 
 /// User events for the event loop.
