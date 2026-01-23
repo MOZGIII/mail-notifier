@@ -2,8 +2,7 @@
 
 use tray_icon::{TrayIcon, TrayIconBuilder, TrayIconEvent, menu::MenuEvent};
 
-mod icon_data;
-mod icon_rendering;
+mod icon;
 mod key;
 mod menu;
 
@@ -71,16 +70,18 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
 
     let proxy = event_loop.create_proxy();
     tokio::task::spawn_blocking(move || {
-        icon_rendering::render_loop(
-            move || new_icon_text_receiver.blocking_recv(),
-            move |icon| {
+        icon_render_loop::run(icon_render_loop::Params {
+            width: icon::WIDTH,
+            height: icon::HEIGHT,
+            render_task_receiver: move || new_icon_text_receiver.blocking_recv(),
+            rendered_data_sender: move |icon| {
                 let result = proxy.send_event(UserEvent::NewIcon(icon));
                 match result {
                     Ok(()) => std::ops::ControlFlow::Continue(()),
                     Err(_) => std::ops::ControlFlow::Break(()),
                 }
             },
-        )
+        })
     });
 
     tracing::info!(message = "Starting tray...");
@@ -104,7 +105,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
 
             match event {
                 tao::event::Event::NewEvents(tao::event::StartCause::Init) => {
-                    let icon = icon_rendering::idle_icon().try_into().unwrap();
+                    let icon = icon::from_render_loop_data(icon::idle()).unwrap();
                     let menu = menu::build_menu(&entries);
                     tray_icon = Some(
                         TrayIconBuilder::new()
@@ -166,7 +167,7 @@ enum UserEvent {
     SupervisorUpdate(monitoring_engine::SupervisorUpdate<Key>),
 
     /// New icon is ready.
-    NewIcon(icon_data::IconData),
+    NewIcon(icon_render_loop::Data),
 
     /// Tray icon event.
     TrayIcon(TrayIconEvent),
@@ -205,12 +206,12 @@ fn update_total(
 }
 
 /// Update the tray icon's actual icon.
-fn update_tray_icon(tray_icon: &mut Option<TrayIcon>, data: icon_data::IconData) {
+fn update_tray_icon(tray_icon: &mut Option<TrayIcon>, data: icon_render_loop::Data) {
     let Some(tray_icon) = tray_icon else {
         return;
     };
 
-    let icon = match data.try_into() {
+    let icon = match icon::from_render_loop_data(data) {
         Ok(val) => val,
         Err(error) => {
             tracing::debug!(?error, "unable to prepare new icon");

@@ -2300,6 +2300,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "icon-render-loop"
+version = "0.1.0"
+dependencies = [
+ "cosmic-text",
+ "icon-render",
+]
+
+[[package]]
 name = "icu_collections"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5299,9 +5307,8 @@ dependencies = [
  "color-eyre",
  "config-bringup",
  "config-yaml",
- "cosmic-text",
  "envfury",
- "icon-render",
+ "icon-render-loop",
  "imap-monitor",
  "monitoring-engine",
  "slotmap",
