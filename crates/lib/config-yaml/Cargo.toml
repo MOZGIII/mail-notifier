@@ -7,8 +7,3 @@ publish = false
 [dependencies]
 config-core = { workspace = true, features = ["serde"] }
 serde_yaml_bw = { workspace = true }
-thiserror = { workspace = true }
-tokio = { workspace = true, features = ["fs"] }
-
-[dev-dependencies]
-tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

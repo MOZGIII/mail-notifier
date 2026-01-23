@@ -1,13 +1,10 @@
 //! Tests for YAML config loading.
 
-use std::path::Path;
+#[test]
+fn loads_yaml_fixture() {
+    let yaml = include_str!("fixtures/sample.yml");
 
-#[tokio::test]
-async fn loads_yaml_fixture() {
-    let fixture_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/sample.yml");
-    let config = config_yaml::load_from_path(&fixture_path)
-        .await
-        .expect("config should load");
+    let config = config_yaml::parse_str(yaml).expect("config should parse");
 
     assert_eq!(config.servers.len(), 1);
     let server = &config.servers[0];
@@ -32,7 +29,7 @@ async fn loads_yaml_fixture() {
 fn parses_keyring_password_with_defaults() {
     let yaml = "\nservers:\n  - name: primary\n    host: imap.example.com\n    tls:\n      mode: implicit\n    credentials:\n      username: user@example.com\n      password:\n        keyring: {}\n    mailboxes:\n      - name: INBOX\n";
 
-    let config = config_yaml::parse_yaml_str(yaml).expect("config should parse");
+    let config = config_yaml::parse_str(yaml).expect("config should parse");
     let server = &config.servers[0];
 
     assert!(matches!(
@@ -46,7 +43,7 @@ fn parses_keyring_password_with_defaults() {
 fn parses_keyring_password_with_overrides() {
     let yaml = "\nservers:\n  - name: primary\n    host: imap.example.com\n    tls:\n      mode: implicit\n    credentials:\n      username: user@example.com\n      password:\n        keyring:\n          service: mail-notifier\n          account: user@example.com\n    mailboxes:\n      - name: INBOX\n";
 
-    let config = config_yaml::parse_yaml_str(yaml).expect("config should parse");
+    let config = config_yaml::parse_str(yaml).expect("config should parse");
     let server = &config.servers[0];
 
     match &server.credentials.password {
@@ -62,7 +59,7 @@ fn parses_keyring_password_with_overrides() {
 fn parses_starttls_aliases() {
     let yaml = "\nservers:\n  - name: primary\n    host: imap.example.com\n    tls:\n      mode: starttls\n    credentials:\n      username: user@example.com\n      password: secret\n    mailboxes:\n      - name: INBOX\n";
 
-    let config = config_yaml::parse_yaml_str(yaml).expect("config should parse");
+    let config = config_yaml::parse_str(yaml).expect("config should parse");
     let server = &config.servers[0];
 
     assert_eq!(server.tls.mode, config_core::TlsMode::StartTls);
@@ -72,7 +69,7 @@ fn parses_starttls_aliases() {
 fn parses_server_idle_timeout() {
     let yaml = "\nservers:\n  - name: primary\n    host: imap.example.com\n    tls:\n      mode: implicit\n    idle-timeout-secs: 120\n    credentials:\n      username: user@example.com\n      password: secret\n    mailboxes:\n      - name: INBOX\n";
 
-    let config = config_yaml::parse_yaml_str(yaml).expect("config should parse");
+    let config = config_yaml::parse_str(yaml).expect("config should parse");
     let server = &config.servers[0];
 
     assert_eq!(server.idle_timeout_secs, Some(120));
@@ -82,7 +79,7 @@ fn parses_server_idle_timeout() {
 fn rejects_invalid_yaml() {
     let yaml = r#"servers: ["#;
 
-    let error = config_yaml::parse_yaml_str(yaml).expect_err("invalid yaml should error");
+    let error = config_yaml::parse_str(yaml).expect_err("invalid yaml should error");
     let message = error.to_string();
     assert!(!message.is_empty());
 }
