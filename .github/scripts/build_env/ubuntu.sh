@@ -6,5 +6,5 @@ PKGS=(
   libayatana-appindicator3-dev
 )
 
+sudo apt update
 sudo apt install -y "${PKGS[@]}"
-
