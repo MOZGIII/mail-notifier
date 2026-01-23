@@ -1,0 +1,12 @@
+[package]
+name = "config-locate"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["fs"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
