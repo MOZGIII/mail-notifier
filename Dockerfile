@@ -8,6 +8,8 @@ FROM --platform=${TARGETPLATFORM} ${BUILDER_BASE} AS builder
 RUN apt-get update \
   && apt-get install -y \
   clang \
+  libgtk-3-dev \
+  libayatana-appindicator3-dev \
   && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p ~/.ssh \

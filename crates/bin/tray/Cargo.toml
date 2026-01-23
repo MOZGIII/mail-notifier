@@ -1,0 +1,20 @@
+[package]
+name = "tray"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+color-eyre = { workspace = true }
+config-bringup = { workspace = true }
+config-yaml = { workspace = true }
+envfury = { workspace = true }
+imap-monitor = { workspace = true }
+monitoring-engine = { workspace = true }
+slotmap = { workspace = true }
+supervisor = { workspace = true }
+tao = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tray-icon = { workspace = true }
