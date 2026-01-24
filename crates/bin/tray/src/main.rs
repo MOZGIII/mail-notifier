@@ -33,6 +33,17 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
 
     let event_loop = tao::event_loop::EventLoopBuilder::<UserEvent>::with_user_event().build();
 
+    #[cfg(target_os = "macos")]
+    let event_loop = {
+        let mut event_loop = event_loop;
+
+        use tao::platform::macos::EventLoopExtMacOS as _;
+        event_loop.set_dock_visibility(false);
+        event_loop.set_activation_policy(tao::platform::macos::ActivationPolicy::Accessory);
+
+        event_loop
+    };
+
     monitoring_engine::spawn_monitors(monitoring_engine::SpawnMonitorsParams {
         monitor_configs: &monitor_configs,
         register_state,
