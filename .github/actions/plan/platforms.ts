@@ -14,6 +14,9 @@ export type Platform = {
   cacheKey: string;
   artifactMarker: string | null;
   isBroken: boolean;
+  buildTarget: string | null;
+  buildTargetDir: string | null;
+  extraTargetsToInstall: string[];
 };
 
 export type Platforms = Record<string, Platform>;
@@ -33,6 +36,9 @@ export const all = {
     cacheKey: "ubuntu2404-amd64",
     artifactMarker: "amd64-ubuntu2404",
     isBroken: false,
+    buildTarget: "x86_64-unknown-linux-gnu.2.17",
+    buildTargetDir: "x86_64-unknown-linux-gnu",
+    extraTargetsToInstall: [], // native
   },
   ubuntu2404_aarch64: {
     name: "Ubuntu 24.04 (aarch64)",
@@ -43,6 +49,9 @@ export const all = {
     cacheKey: "ubuntu2404-aarch64",
     artifactMarker: "aarch64-ubuntu2404",
     isBroken: false,
+    buildTarget: "aarch64-unknown-linux-gnu.2.17",
+    buildTargetDir: "aarch64-unknown-linux-gnu",
+    extraTargetsToInstall: [], // native
   },
   windows_amd64: {
     name: "Windows (amd64)",
@@ -53,6 +62,9 @@ export const all = {
     cacheKey: "windows-amd64",
     artifactMarker: "amd64",
     isBroken: true,
+    buildTarget: null, // native
+    buildTargetDir: null, // native
+    extraTargetsToInstall: [], // native
   },
   macos15_amd64: {
     name: "macOS 15 (amd64)",
@@ -63,6 +75,9 @@ export const all = {
     cacheKey: "macos15-amd64",
     artifactMarker: "amd64",
     isBroken: true, // needs payment, because it's a `-large` runner
+    buildTarget: null, // native
+    buildTargetDir: null, // native
+    extraTargetsToInstall: [], // native
   },
   macos15_aarch64: {
     name: "macOS 15 (aarch64)",
@@ -73,6 +88,9 @@ export const all = {
     cacheKey: "macos15-aarch64",
     artifactMarker: "aarch64",
     isBroken: false,
+    buildTarget: null, // native
+    buildTargetDir: null, // native
+    extraTargetsToInstall: [], // native
   },
 } satisfies Platforms;
 
