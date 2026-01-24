@@ -1,0 +1,7 @@
+#!/bin/bash
+set -euo pipefail
+
+cd -- "$( dirname -- "${BASH_SOURCE[0]}" )"
+
+launchctl bootout gui/$UID ~/Library/LaunchAgents/mail-notifier.plist
+rm -f ~/Library/LaunchAgents/mail-notifier.plist
