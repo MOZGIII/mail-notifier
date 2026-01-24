@@ -1,0 +1,7 @@
+#!/bin/bash
+set -euo pipefail
+
+cd -- "$( dirname -- "${BASH_SOURCE[0]}" )"
+
+cp mail-notifier-tray.plist ~/Library/LaunchAgents/mail-notifier-tray.plist
+launchctl bootstrap gui/$UID ~/Library/LaunchAgents/mail-notifier-tray.plist
