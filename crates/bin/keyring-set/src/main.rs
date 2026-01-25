@@ -28,11 +28,15 @@ async fn main() -> color_eyre::eyre::Result<()> {
         bail!("Multiple servers named '{server_name}' in config");
     }
 
-    let keyring = match &server.credentials.password {
-        config_core::PasswordSource::Keyring { keyring } => {
-            config_bringup::keyring_service_account(keyring, &server.credentials.username)
-        }
-        config_core::PasswordSource::Plain(_) => {
+    let keyring = match &server.auth {
+        config_core::Auth::Login {
+            credentials:
+                config_core::LoginCredentials {
+                    password: config_core::PasswordSource::Keyring { keyring },
+                    username,
+                },
+        } => config_bringup::keyring_service_account(keyring, username),
+        _ => {
             bail!("Server '{server_name}' does not use keyring credentials in config");
         }
     };

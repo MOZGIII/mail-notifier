@@ -2,8 +2,10 @@
 
 use std::time::Duration;
 
+pub mod config;
+
 /// Fully resolved mailbox monitoring configuration.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Config {
     /// Human-friendly name for logging and identification.
     pub server_name: String,
@@ -20,11 +22,8 @@ pub struct Config {
     /// TLS server name (SNI).
     pub tls_server_name: String,
 
-    /// Username for IMAP authentication.
-    pub username: String,
-
-    /// Password for IMAP authentication.
-    pub password: String,
+    /// IMAP authentication.
+    pub auth: config::Auth,
 
     /// Mailbox name (e.g. INBOX).
     pub mailbox: imap_utf7::ImapUtf7String,
@@ -63,13 +62,21 @@ where
         "starting IMAP monitor"
     );
 
+    let auth = match &config.auth {
+        config::Auth::Login { username, password } => {
+            imap_session::auth::Params::Login { username, password }
+        }
+        config::Auth::OAuth2Credentials { user, access_token } => {
+            imap_session::auth::Params::OAuth2 { user, access_token }
+        }
+    };
+
     let session = imap_session::setup(imap_session::SetupParams {
         host: &config.host,
         port: config.port,
         tls_mode: config.tls_mode,
         tls_server_name: &config.tls_server_name,
-        username: &config.username,
-        password: &config.password,
+        auth,
     })
     .await
     .map_err(MonitorError::SessionSetup)?;

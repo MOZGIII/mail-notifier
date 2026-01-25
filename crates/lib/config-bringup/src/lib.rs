@@ -14,8 +14,13 @@ pub fn init_keyring_if_needed(
 ) -> Result<Option<KeyringGuard>, KeyringInitError> {
     let needs_keyring = config.servers.iter().any(|server| {
         matches!(
-            server.credentials.password,
-            config_core::PasswordSource::Keyring { .. }
+            server.auth,
+            config_core::Auth::Login {
+                credentials: config_core::LoginCredentials {
+                    password: config_core::PasswordSource::Keyring { .. },
+                    ..
+                }
+            }
         )
     });
 
@@ -43,7 +48,7 @@ fn default_port(mode: imap_tls::TlsMode) -> u16 {
 }
 
 /// Fully resolved bringup configuration shared across mailboxes.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct BringupServerConfig {
     /// Human-friendly name for logging and identification.
     pub server_name: String,
@@ -60,11 +65,8 @@ pub struct BringupServerConfig {
     /// TLS server name (SNI).
     pub tls_server_name: String,
 
-    /// Username for IMAP authentication.
-    pub username: String,
-
-    /// Password for IMAP authentication.
-    pub password: String,
+    /// IMAP authentication.
+    pub auth: imap_monitor::config::Auth,
 }
 
 /// Build a resolved bringup server config from config-core types.
@@ -78,7 +80,8 @@ pub async fn bringup_server_config(
         .server_name
         .clone()
         .unwrap_or_else(|| server.host.clone());
-    let password = resolve_password(&server.credentials).await?;
+
+    let auth = bringup_server_auth_config(&server.auth).await?;
 
     Ok(BringupServerConfig {
         server_name: server.name.clone(),
@@ -86,8 +89,29 @@ pub async fn bringup_server_config(
         port,
         tls_mode,
         tls_server_name,
-        username: server.credentials.username.clone(),
-        password,
+        auth,
+    })
+}
+
+/// Bringup the auth config.
+async fn bringup_server_auth_config(
+    auth: &config_core::Auth,
+) -> Result<imap_monitor::config::Auth, ResolveCredentialsError> {
+    Ok(match auth {
+        config_core::Auth::Login { credentials } => {
+            let password = resolve_password(credentials).await?;
+
+            imap_monitor::config::Auth::Login {
+                username: credentials.username.clone(),
+                password,
+            }
+        }
+        config_core::Auth::OAuth2Credentials { oauth2 } => {
+            imap_monitor::config::Auth::OAuth2Credentials {
+                user: oauth2.user.clone(),
+                access_token: oauth2.access_token.clone(),
+            }
+        }
     })
 }
 
@@ -108,8 +132,7 @@ pub async fn bringup_monitor_config(
         port: server_config.port,
         tls_mode: server_config.tls_mode,
         tls_server_name: server_config.tls_server_name,
-        username: server_config.username,
-        password: server_config.password,
+        auth: server_config.auth,
         mailbox: imap_utf7::ImapUtf7String::from_utf8(&mailbox.name),
         idle_timeout: std::time::Duration::from_secs(idle_timeout_secs),
     })
@@ -132,7 +155,7 @@ pub async fn bringup_monitor_configs(
 
 /// Resolve the password from config, including keyring lookups.
 async fn resolve_password(
-    credentials: &config_core::Credentials,
+    credentials: &config_core::LoginCredentials,
 ) -> Result<String, ResolveCredentialsError> {
     match &credentials.password {
         config_core::PasswordSource::Plain(password) => Ok(password.clone()),

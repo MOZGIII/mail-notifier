@@ -2879,6 +2879,7 @@ dependencies = [
  "config-bringup",
  "config-load",
  "futures",
+ "imap-monitor",
  "imap-session",
  "imap-utf7",
  "tokio",

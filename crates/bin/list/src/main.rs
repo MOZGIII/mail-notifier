@@ -22,13 +22,21 @@ async fn main() -> color_eyre::eyre::Result<()> {
             "listing IMAP mailboxes"
         );
 
+        let auth = match &server_config.auth {
+            imap_monitor::config::Auth::Login { username, password } => {
+                imap_session::auth::Params::Login { username, password }
+            }
+            imap_monitor::config::Auth::OAuth2Credentials { user, access_token } => {
+                imap_session::auth::Params::OAuth2 { user, access_token }
+            }
+        };
+
         let mut session = imap_session::setup(imap_session::SetupParams {
             host: &server_config.host,
             port: server_config.port,
             tls_mode: server_config.tls_mode,
             tls_server_name: &server_config.tls_server_name,
-            username: &server_config.username,
-            password: &server_config.password,
+            auth,
         })
         .await?;
 
