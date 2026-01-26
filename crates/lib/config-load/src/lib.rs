@@ -23,18 +23,15 @@ pub enum WithDefaultEnvVarError {
 
     /// Resolving configuration error.
     #[error(transparent)]
-    Resolver(#[from] config_resolver::LoadError<YamlError>),
+    Resolver(#[from] config_resolver::LoadError<config_yaml::Error>),
 }
 
 /// Load configuration using the standard mail-notifier configuration loading process but
 /// with a custom env path value.
 pub async fn with(
     env_path: Option<PathBuf>,
-) -> Result<Config, config_resolver::LoadError<YamlError>> {
+) -> Result<Config, config_resolver::LoadError<config_yaml::Error>> {
     let paths: Vec<PathBuf> = config_paths::resolve(env_path).collect();
-    let meta_config = config_resolver::load(&paths, |s| serde_yaml_bw::from_str(&s)).await?;
+    let meta_config = config_resolver::load(&paths, |s| config_yaml::parse_yaml(&s)).await?;
     Ok(meta_config.payload)
 }
-
-/// A convenience type-alias for the YAML parser error type.
-pub type YamlError = serde_yaml_bw::Error;

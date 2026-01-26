@@ -1,0 +1,10 @@
+servers:
+  - name: "test server"
+    host: "imap.example.com"
+    tls:
+      mode: start_tls
+    login:
+      username: "user@example.com"
+      password: "secret"
+    mailboxes:
+      - name: "INBOX"

@@ -1,0 +1,11 @@
+servers:
+  - name: "test server"
+    host: "imap.example.com"
+    tls:
+      mode: implicit
+    login:
+      username: "user@example.com"
+      password:
+        keyring: {}
+    mailboxes:
+      - name: "INBOX"

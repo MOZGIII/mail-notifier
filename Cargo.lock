@@ -817,8 +817,8 @@ dependencies = [
  "config-core",
  "config-paths",
  "config-resolver",
+ "config-yaml",
  "envfury",
- "serde_yaml_bw",
  "thiserror 2.0.18",
 ]
 
@@ -836,6 +836,14 @@ version = "0.1.0"
 dependencies = [
  "thiserror 2.0.18",
  "tokio",
+]
+
+[[package]]
+name = "config-yaml"
+version = "0.1.0"
+dependencies = [
+ "config-core",
+ "serde_yaml_bw",
 ]
 
 [[package]]
