@@ -1,4 +1,4 @@
-# Copilot / AI agent instructions
+# AI agent instructions
 
 Purpose: give AI coding agents the minimal, actionable context to be productive in this repository.
 
