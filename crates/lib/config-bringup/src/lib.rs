@@ -15,12 +15,10 @@ pub fn init_keyring_if_needed(
     let needs_keyring = config.servers.iter().any(|server| {
         matches!(
             server.auth,
-            config_core::Auth::Login {
-                credentials: config_core::LoginCredentials {
-                    password: config_core::PasswordSource::Keyring { .. },
-                    ..
-                }
-            }
+            config_core::Auth::Login(config_core::LoginCredentials {
+                password: config_core::PasswordSource::Keyring { .. },
+                ..
+            })
         )
     });
 
@@ -98,7 +96,7 @@ async fn bringup_server_auth_config(
     auth: &config_core::Auth,
 ) -> Result<imap_monitor::config::Auth, ResolveCredentialsError> {
     Ok(match auth {
-        config_core::Auth::Login { credentials } => {
+        config_core::Auth::Login(credentials) => {
             let password = resolve_password(credentials).await?;
 
             imap_monitor::config::Auth::Login {
@@ -106,7 +104,7 @@ async fn bringup_server_auth_config(
                 password,
             }
         }
-        config_core::Auth::OAuth2Credentials { oauth2 } => {
+        config_core::Auth::OAuth2Credentials(oauth2) => {
             imap_monitor::config::Auth::OAuth2Credentials {
                 user: oauth2.user.clone(),
                 access_token: oauth2.access_token.clone(),

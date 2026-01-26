@@ -2,7 +2,7 @@
 
 /// Root configuration.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Config {
     /// IMAP servers to monitor.
@@ -11,7 +11,7 @@ pub struct Config {
 
 /// A monitored IMAP server.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct ServerConfig {
     /// Human-friendly name for logging and identification.
@@ -27,7 +27,7 @@ pub struct ServerConfig {
     pub tls: TlsConfig,
 
     /// Authentication settings.
-    #[serde(flatten)]
+    #[cfg_attr(feature = "serde", serde(flatten))]
     pub auth: Auth,
 
     /// Mailboxes to monitor on this server.
@@ -39,7 +39,7 @@ pub struct ServerConfig {
 
 /// TLS configuration for a server.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct TlsConfig {
     /// TLS mode.
@@ -51,41 +51,33 @@ pub struct TlsConfig {
 
 /// Supported TLS modes.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum TlsMode {
     /// Implicit TLS (usually port 993).
     Implicit,
 
     /// STARTTLS upgrade (usually port 143).
-    #[cfg_attr(
-        feature = "serde",
-        serde(alias = "starttls", alias = "start_tls", alias = "start-tls")
-    )]
+    #[cfg_attr(feature = "serde", serde(rename = "starttls", alias = "start_tls"))]
     StartTls,
 }
 
 /// IMAP authentication settings.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Auth {
     /// Login via username/password.
-    Login {
-        /// Login credentials.
-        credentials: LoginCredentials,
-    },
+    Login(LoginCredentials),
 
     /// Authneticate via OAuth 2 credentials.
-    OAuth2Credentials {
-        /// OAuth 2 credentials.
-        oauth2: OAuth2Credentials,
-    },
+    #[cfg_attr(feature = "serde", serde(rename = "oauth2_credentials"))]
+    OAuth2Credentials(OAuth2Credentials),
 }
 
 /// Login credentials for IMAP authentication.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct LoginCredentials {
     /// Username for IMAP authentication.
@@ -95,9 +87,9 @@ pub struct LoginCredentials {
     pub password: PasswordSource,
 }
 
-/// OAuth2 settings for IMAP authentication.
+/// OAuth 2 credentials for IMAP authentication.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct OAuth2Credentials {
     /// Username for OAuth 2 IMAP authentication.
@@ -124,7 +116,7 @@ pub enum PasswordSource {
 
 /// Keyring reference for resolving a password.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct KeyringRef {
     /// Keyring service name. Defaults to the application service.
@@ -136,7 +128,7 @@ pub struct KeyringRef {
 
 /// A mailbox to monitor.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct MailboxConfig {
     /// Mailbox name (e.g. INBOX).

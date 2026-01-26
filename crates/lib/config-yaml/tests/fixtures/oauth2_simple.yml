@@ -1,0 +1,10 @@
+servers:
+  - name: "test server"
+    host: "imap.example.com"
+    tls:
+      mode: implicit
+    oauth2_credentials:
+      user: "user@example.com"
+      access_token: "token123"
+    mailboxes:
+      - name: "INBOX"
