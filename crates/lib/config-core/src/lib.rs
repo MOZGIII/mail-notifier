@@ -26,8 +26,9 @@ pub struct ServerConfig {
     /// TLS settings.
     pub tls: TlsConfig,
 
-    /// Credentials for authentication.
-    pub credentials: Credentials,
+    /// Authentication settings.
+    #[serde(flatten)]
+    pub auth: Auth,
 
     /// Mailboxes to monitor on this server.
     pub mailboxes: Vec<MailboxConfig>,
@@ -64,16 +65,46 @@ pub enum TlsMode {
     StartTls,
 }
 
-/// Credentials for IMAP authentication.
+/// IMAP authentication settings.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 #[derive(Debug, Clone, PartialEq)]
-pub struct Credentials {
+pub enum Auth {
+    /// Login via username/password.
+    Login {
+        /// Login credentials.
+        credentials: LoginCredentials,
+    },
+
+    /// Authneticate via OAuth 2 credentials.
+    OAuth2Credentials {
+        /// OAuth 2 credentials.
+        oauth2: OAuth2Credentials,
+    },
+}
+
+/// Login credentials for IMAP authentication.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[derive(Debug, Clone, PartialEq)]
+pub struct LoginCredentials {
     /// Username for IMAP authentication.
     pub username: String,
 
     /// Password for IMAP authentication.
     pub password: PasswordSource,
+}
+
+/// OAuth2 settings for IMAP authentication.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[derive(Debug, Clone, PartialEq)]
+pub struct OAuth2Credentials {
+    /// Username for OAuth 2 IMAP authentication.
+    pub user: String,
+
+    /// Access token for OAuth 2 IMAP authentication.
+    pub access_token: String,
 }
 
 /// Source for a password value.

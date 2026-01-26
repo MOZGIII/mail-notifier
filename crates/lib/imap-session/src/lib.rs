@@ -3,6 +3,13 @@
 /// The effective session type we use.
 pub type Session = async_imap::Session<imap_tls_rustls::TlsStream>;
 
+/// The effective client type we use.
+///
+/// Not public since it's fully managed intenrally by this crate.
+type Client = async_imap::Client<imap_tls_rustls::TlsStream>;
+
+pub mod auth;
+
 /// IMAP session params.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SetupParams<'a> {
@@ -18,11 +25,8 @@ pub struct SetupParams<'a> {
     /// TLS server name (SNI).
     pub tls_server_name: &'a str,
 
-    /// Username for IMAP authentication.
-    pub username: &'a str,
-
-    /// Password for IMAP authentication.
-    pub password: &'a str,
+    /// Params for IMAP authentication.
+    pub auth: auth::Params<'a>,
 }
 
 /// Errors returned while monitoring a mailbox.
@@ -40,9 +44,9 @@ pub enum SetupError {
     #[error("IMAP TLS connection error: {0}")]
     ImapTlsConnect(#[source] imap_tls::ConnectError<imap_tls_rustls::TlsConnectError>),
 
-    /// IMAP login error.
-    #[error("IMAP login error: {0}")]
-    Login(#[source] async_imap::error::Error),
+    /// IMAP auth error.
+    #[error("IMAP auth error: {0}")]
+    Auth(#[source] auth::Error),
 }
 
 /// Connect and login to set up an IMAP session.
@@ -52,8 +56,7 @@ pub async fn setup(params: SetupParams<'_>) -> Result<Session, SetupError> {
         port,
         tls_mode,
         tls_server_name,
-        username,
-        password,
+        auth,
     } = params;
 
     tracing::debug!(
@@ -71,11 +74,9 @@ pub async fn setup(params: SetupParams<'_>) -> Result<Session, SetupError> {
         .await
         .map_err(SetupError::ImapTlsConnect)?;
 
-    let session = client
-        .login(username, password)
+    let session = auth::execute(client, auth)
         .await
-        .map_err(|(err, _client)| err)
-        .map_err(SetupError::Login)?;
+        .map_err(SetupError::Auth)?;
 
     Ok(session)
 }
