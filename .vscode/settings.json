@@ -8,13 +8,10 @@
     "editor.defaultFormatter": "tamasfe.even-better-toml"
   },
   "chat.tools.terminal.autoApprove": {
-    "/^cargo fmt --all$/": {
-      "approve": true,
-      "matchCommandLine": true
-    },
-    "/^cargo clippy --workspace --all-targets$/": {
-      "approve": true,
-      "matchCommandLine": true
-    }
+    "cargo build": true,
+    "cargo test": true,
+    "cargo clippy": true,
+    "cargo fmt": true,
+    "cargo check": true
   }
 }
