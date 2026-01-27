@@ -1,7 +1,5 @@
 //! Lift raw config into mailbox monitor config.
 
-use keyring_bridge::{KeyringGuard, KeyringInitError};
-
 /// Default IDLE timeout (seconds) when not specified in config.
 const DEFAULT_IDLE_TIMEOUT_SECS: u64 = 300;
 
@@ -11,7 +9,7 @@ const DEFAULT_KEYRING_SERVICE: &str = "mail-notifier";
 /// Initialize the default keyring store when the config references keyring credentials.
 pub fn init_keyring_if_needed(
     config: &config_core::Config,
-) -> Result<Option<KeyringGuard>, KeyringInitError> {
+) -> Result<Option<keyring_bridge::KeyringGuard>, keyring_bridge::KeyringInitError> {
     let needs_keyring = config.servers.iter().any(|server| {
         matches!(
             server.auth,
@@ -22,11 +20,11 @@ pub fn init_keyring_if_needed(
         )
     });
 
-    if needs_keyring {
-        KeyringGuard::init_default().map(Some)
-    } else {
-        Ok(None)
+    if !needs_keyring {
+        return Ok(None);
     }
+
+    keyring_bridge::KeyringGuard::init_default().map(Some)
 }
 
 /// Convert config TLS mode to IMAP TLS mode.
