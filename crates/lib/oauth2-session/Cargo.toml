@@ -1,0 +1,11 @@
+[package]
+name = "oauth2-manager"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+oauth2 = { workspace = true, features = ["reqwest"] }
+oauth2-token-storage-core = { workspace = true }
+reqwest = { workspace = true }
+thiserror = { workspace = true }
