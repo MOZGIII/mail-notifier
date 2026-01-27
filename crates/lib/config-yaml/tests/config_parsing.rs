@@ -34,6 +34,7 @@ fn test_basic_config_parsing() {
 
     let expected = Config {
         servers: vec![base_server()],
+        oauth2_clients: Default::default(),
     };
 
     assert_eq!(config, expected);
@@ -52,6 +53,7 @@ fn test_oauth2_config_parsing() {
             }),
             ..base_server()
         }],
+        oauth2_clients: Default::default(),
     };
 
     assert_eq!(config, expected);
@@ -75,6 +77,7 @@ fn test_keyring_config_parsing() {
             }),
             ..base_server()
         }],
+        oauth2_clients: Default::default(),
     };
 
     assert_eq!(config, expected);
@@ -93,6 +96,7 @@ fn test_starttls_config_parsing() {
             },
             ..base_server()
         }],
+        oauth2_clients: Default::default(),
     };
 
     assert_eq!(config, expected);
@@ -111,6 +115,7 @@ fn test_starttls_alias_config_parsing() {
             },
             ..base_server()
         }],
+        oauth2_clients: Default::default(),
     };
 
     assert_eq!(config, expected);
@@ -126,6 +131,7 @@ fn test_idle_timeout_config_parsing() {
             idle_timeout_secs: Some(120),
             ..base_server()
         }],
+        oauth2_clients: Default::default(),
     };
 
     assert_eq!(config, expected);
@@ -149,6 +155,7 @@ fn test_keyring_overrides_config_parsing() {
             }),
             ..base_server()
         }],
+        oauth2_clients: Default::default(),
     };
 
     assert_eq!(config, expected);
