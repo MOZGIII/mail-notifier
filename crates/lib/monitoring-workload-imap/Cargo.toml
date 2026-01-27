@@ -1,0 +1,11 @@
+[package]
+name = "monitoring-workload-imap"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+config-bringup = { workspace = true }
+imap-checker = { workspace = true }
+imap-monitor = { workspace = true }
+monitoring-core = { workspace = true }

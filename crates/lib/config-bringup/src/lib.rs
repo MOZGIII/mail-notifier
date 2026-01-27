@@ -102,7 +102,7 @@ fn mailbox(
 /// Bringup the full config for monitoring purposes.
 pub async fn for_monitoring(
     core_config: &config_core::Config,
-) -> Result<Vec<data::Mailbox>, ResolveCredentialsError> {
+) -> Result<Vec<Arc<data::Mailbox>>, ResolveCredentialsError> {
     let mut list = Vec::new();
 
     for core_server in &core_config.servers {
@@ -112,7 +112,7 @@ pub async fn for_monitoring(
         for core_mailbox in &core_server.mailboxes {
             let bringup_server = Arc::clone(&bringup_server);
             let bringup_mailbox = mailbox(bringup_server, core_server, core_mailbox);
-
+            let bringup_mailbox = Arc::new(bringup_mailbox);
             list.push(bringup_mailbox);
         }
     }

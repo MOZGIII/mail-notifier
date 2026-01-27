@@ -21,7 +21,9 @@ imap-tls-rustls = { path = "crates/lib/imap-tls-rustls" }
 imap-utf7 = { path = "crates/lib/imap-utf7" }
 keyring-bridge = { path = "crates/lib/keyring-bridge" }
 keyring-password = { path = "crates/lib/keyring-password" }
+monitoring-core = { path = "crates/lib/monitoring-core" }
 monitoring-engine = { path = "crates/lib/monitoring-engine" }
+monitoring-workload-imap = { path = "crates/lib/monitoring-workload-imap" }
 oauth2-token-storage-core = { path = "crates/lib/oauth2-token-storage-core" }
 supervisor = { path = "crates/lib/supervisor" }
 tui-crossterm-guard = { path = "crates/lib/tui-crossterm-guard" }

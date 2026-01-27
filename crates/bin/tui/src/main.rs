@@ -1,5 +1,7 @@
 //! Main entrypoint.
 
+use std::sync::Arc;
+
 #[tokio::main]
 async fn main() -> color_eyre::eyre::Result<()> {
     color_eyre::install()?;
@@ -18,7 +20,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
     let mut entries: slotmap::SlotMap<slotmap::DefaultKey, tui_view::EntryState> =
         slotmap::SlotMap::with_key();
 
-    let register_state = |config: &config_bringup::data::Mailbox| {
+    let register_state = |config: &Arc<config_bringup::data::Mailbox>| {
         let label = format!("{} / {}", config.server.server_name, config.mailbox);
         entries.insert(tui_view::EntryState {
             name: label,
@@ -27,23 +29,25 @@ async fn main() -> color_eyre::eyre::Result<()> {
         })
     };
 
-    monitoring_engine::spawn_monitors(monitoring_engine::SpawnMonitorsParams {
-        mailboxes: &mailboxes,
-        register_state,
-        join_set: &mut join_set,
-        mailbox_notify: move |update| {
-            let mailbox_sender = mailbox_sender.clone();
-            async move {
-                let _ = mailbox_sender.send(update).await;
-            }
+    monitoring_engine::spawn_monitors::<monitoring_workload_imap::Mailbox, _, _, _, _, _, _>(
+        monitoring_engine::SpawnMonitorsParams {
+            workload_items: &mailboxes,
+            register_state,
+            join_set: &mut join_set,
+            workload_notify: move |update| {
+                let mailbox_sender = mailbox_sender.clone();
+                async move {
+                    let _ = mailbox_sender.send(update).await;
+                }
+            },
+            supervisor_notify: move |update| {
+                let supervisor_sender = supervisor_sender.clone();
+                async move {
+                    let _ = supervisor_sender.send(update).await;
+                }
+            },
         },
-        supervisor_notify: move |update| {
-            let supervisor_sender = supervisor_sender.clone();
-            async move {
-                let _ = supervisor_sender.send(update).await;
-            }
-        },
-    });
+    );
 
     tracing::info!(message = "Entering UI...");
 

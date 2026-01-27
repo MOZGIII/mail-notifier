@@ -1,5 +1,7 @@
 //! Tray menu for mail notifier.
 
+use std::sync::Arc;
+
 use tray_icon::{TrayIcon, TrayIconBuilder, TrayIconEvent, menu::MenuEvent};
 
 mod icon;
@@ -22,7 +24,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
 
     let mut entries = slotmap::SlotMap::<Key, menu::EntryState>::with_key();
 
-    let register_state = |config: &config_bringup::data::Mailbox| {
+    let register_state = |config: &Arc<config_bringup::data::Mailbox>| {
         let label = format!("{} / {}", config.server.server_name, config.mailbox);
         entries.insert(menu::EntryState {
             name: label,
@@ -44,37 +46,39 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
         event_loop
     };
 
-    monitoring_engine::spawn_monitors(monitoring_engine::SpawnMonitorsParams {
-        mailboxes: &mailboxes,
-        register_state,
-        join_set: &mut join_set,
-        mailbox_notify: {
-            let proxy = event_loop.create_proxy();
-            move |update| {
-                let proxy = proxy.clone();
-                async move {
-                    tokio::task::spawn_blocking(move || {
-                        let _ = proxy.send_event(UserEvent::MailboxUpdate(update));
-                    })
-                    .await
-                    .unwrap()
+    monitoring_engine::spawn_monitors::<monitoring_workload_imap::Mailbox, _, _, _, _, _, _>(
+        monitoring_engine::SpawnMonitorsParams {
+            workload_items: &mailboxes,
+            register_state,
+            join_set: &mut join_set,
+            workload_notify: {
+                let proxy = event_loop.create_proxy();
+                move |update| {
+                    let proxy = proxy.clone();
+                    async move {
+                        tokio::task::spawn_blocking(move || {
+                            let _ = proxy.send_event(UserEvent::WorkloadUpdate(update));
+                        })
+                        .await
+                        .unwrap()
+                    }
                 }
-            }
-        },
-        supervisor_notify: {
-            let proxy = event_loop.create_proxy();
-            move |update| {
-                let proxy = proxy.clone();
-                async move {
-                    tokio::task::spawn_blocking(move || {
-                        let _ = proxy.send_event(UserEvent::SupervisorUpdate(update));
-                    })
-                    .await
-                    .unwrap()
+            },
+            supervisor_notify: {
+                let proxy = event_loop.create_proxy();
+                move |update| {
+                    let proxy = proxy.clone();
+                    async move {
+                        tokio::task::spawn_blocking(move || {
+                            let _ = proxy.send_event(UserEvent::SupervisorUpdate(update));
+                        })
+                        .await
+                        .unwrap()
+                    }
                 }
-            }
+            },
         },
-    });
+    );
 
     let (new_icon_text_sender, mut new_icon_text_receiver) = tokio::sync::mpsc::channel(128);
 
@@ -126,7 +130,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                     );
                     update_total(&entries, &mut total_cache, new_icon_text_sender.clone());
                 }
-                tao::event::Event::UserEvent(UserEvent::MailboxUpdate(update)) => {
+                tao::event::Event::UserEvent(UserEvent::WorkloadUpdate(update)) => {
                     if let Some(entry) = entries.get_mut(update.entry) {
                         entry.unread = update.payload.unread;
                     }
@@ -170,11 +174,11 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
 #[derive(Debug)]
 #[allow(dead_code)]
 enum UserEvent {
-    /// Mailbox update event.
-    MailboxUpdate(monitoring_engine::MailboxUpdate<Key>),
+    /// Workload update event.
+    WorkloadUpdate(monitoring_engine::WorkloadUpdate<Key, monitoring_workload_imap::Mailbox>),
 
     /// Supervisor update event.
-    SupervisorUpdate(monitoring_engine::SupervisorUpdate<Key>),
+    SupervisorUpdate(monitoring_engine::SupervisorUpdate<Key, monitoring_workload_imap::Mailbox>),
 
     /// New icon is ready.
     NewIcon(icon_render_loop::Data),
