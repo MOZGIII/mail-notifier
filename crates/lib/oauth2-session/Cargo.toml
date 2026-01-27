@@ -1,5 +1,5 @@
 [package]
-name = "oauth2-manager"
+name = "oauth2-session"
 version = "0.1.0"
 edition = "2024"
 publish = false
