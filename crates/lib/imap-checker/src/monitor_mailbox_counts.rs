@@ -17,16 +17,16 @@ pub enum MonitorError {
 }
 
 /// Monitor mailbox counts and send updates on change.
-pub async fn monitor_mailbox_counts<S, F, Fut>(
-    mut session: async_imap::Session<S>,
+pub async fn monitor_mailbox_counts<Stream, Notify, NotifyFut>(
+    mut session: async_imap::Session<Stream>,
     mailbox: &imap_utf7::ImapUtf7Str,
     idle_timeout: std::time::Duration,
-    mut notify: F,
+    mut notify: Notify,
 ) -> Result<core::convert::Infallible, MonitorError>
 where
-    S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + std::fmt::Debug,
-    F: FnMut(crate::MailboxCounts) -> Fut + Send,
-    Fut: std::future::Future<Output = ()> + Send,
+    Stream: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + std::fmt::Debug,
+    Notify: FnMut(crate::MailboxCounts) -> NotifyFut + Send,
+    NotifyFut: std::future::Future<Output = ()> + Send,
 {
     let capabilities = session.capabilities().await?;
     if !capabilities.has_str("IDLE") {
