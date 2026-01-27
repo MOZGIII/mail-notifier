@@ -1,0 +1,12 @@
+[package]
+name = "oauth2-token-storage-keyring"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+keyring-core = { workspace = true }
+oauth2-token-storage-core = { workspace = true, features = ["serde"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["rt"] }

@@ -3391,6 +3391,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "oauth2-token-storage-keyring"
+version = "0.1.0"
+dependencies = [
+ "keyring-core",
+ "oauth2-token-storage-core",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
 name = "objc2"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
