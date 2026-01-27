@@ -45,13 +45,13 @@ pub enum MonitorError {
 }
 
 /// Connect and monitor a mailbox based on provided settings.
-pub async fn monitor<F, Fut>(
+pub async fn monitor<Notify, NotifyFut>(
     config: &Config,
-    notify: F,
+    notify: Notify,
 ) -> Result<core::convert::Infallible, MonitorError>
 where
-    F: FnMut(imap_checker::MailboxCounts) -> Fut + Send,
-    Fut: std::future::Future<Output = ()> + Send,
+    Notify: FnMut(imap_checker::MailboxCounts) -> NotifyFut + Send,
+    NotifyFut: std::future::Future<Output = ()> + Send,
 {
     tracing::info!(
         server_name = %config.server_name,
