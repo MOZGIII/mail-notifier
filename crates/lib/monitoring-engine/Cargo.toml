@@ -5,6 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
+config-bringup = { workspace = true }
 exp-backoff = { workspace = true }
 imap-checker = { workspace = true }
 imap-monitor = { workspace = true }

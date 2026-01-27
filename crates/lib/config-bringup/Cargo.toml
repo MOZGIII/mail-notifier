@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 config-core = { workspace = true }
-imap-monitor = { workspace = true }
+imap-session = { workspace = true }
 imap-tls = { workspace = true }
 imap-utf7 = { workspace = true }
 keyring-bridge = { workspace = true }

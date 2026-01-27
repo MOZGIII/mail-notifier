@@ -1,35 +1,16 @@
 //! Mailbox monitoring entrypoint and configuration.
 
-use std::time::Duration;
-
-pub mod config;
-
 /// Fully resolved mailbox monitoring configuration.
 #[derive(Debug, Clone)]
-pub struct Config {
-    /// Human-friendly name for logging and identification.
-    pub server_name: String,
-
-    /// Hostname or IP address of the IMAP server.
-    pub host: String,
-
-    /// IMAP port.
-    pub port: u16,
-
-    /// TLS mode.
-    pub tls_mode: imap_tls::TlsMode,
-
-    /// TLS server name (SNI).
-    pub tls_server_name: String,
-
-    /// IMAP authentication.
-    pub auth: config::Auth,
+pub struct MonitorParams<'a> {
+    /// IMAP session setup params.
+    pub imap_session: imap_session::SetupParams<'a>,
 
     /// Mailbox name (e.g. INBOX).
-    pub mailbox: imap_utf7::ImapUtf7String,
+    pub mailbox: &'a imap_utf7::ImapUtf7Str,
 
     /// Idle timeout.
-    pub idle_timeout: Duration,
+    pub idle_timeout: std::time::Duration,
 }
 
 /// Errors returned while monitoring a mailbox.
@@ -46,42 +27,32 @@ pub enum MonitorError {
 
 /// Connect and monitor a mailbox based on provided settings.
 pub async fn monitor<Notify, NotifyFut>(
-    config: &Config,
+    params: MonitorParams<'_>,
     notify: Notify,
 ) -> Result<core::convert::Infallible, MonitorError>
 where
     Notify: FnMut(imap_checker::MailboxCounts) -> NotifyFut + Send,
     NotifyFut: std::future::Future<Output = ()> + Send,
 {
+    let MonitorParams {
+        imap_session,
+        mailbox,
+        idle_timeout,
+    } = params;
+
     tracing::info!(
-        server_name = %config.server_name,
-        imap_host = %config.host,
-        imap_port = config.port,
-        imap_mailbox = %config.mailbox,
-        imap_tls_mode = ?config.tls_mode,
+        imap_host = %imap_session.host,
+        imap_port = imap_session.port,
+        imap_mailbox = %mailbox,
+        imap_tls_mode = ?imap_session.tls_mode,
         "starting IMAP monitor"
     );
 
-    let auth = match &config.auth {
-        config::Auth::Login { username, password } => {
-            imap_session::auth::Params::Login { username, password }
-        }
-        config::Auth::OAuth2Credentials { user, access_token } => {
-            imap_session::auth::Params::OAuth2 { user, access_token }
-        }
-    };
+    let session = imap_session::setup(imap_session)
+        .await
+        .map_err(MonitorError::SessionSetup)?;
 
-    let session = imap_session::setup(imap_session::SetupParams {
-        host: &config.host,
-        port: config.port,
-        tls_mode: config.tls_mode,
-        tls_server_name: &config.tls_server_name,
-        auth,
-    })
-    .await
-    .map_err(MonitorError::SessionSetup)?;
-
-    imap_checker::monitor_mailbox_counts(session, &config.mailbox, config.idle_timeout, notify)
+    imap_checker::monitor_mailbox_counts(session, mailbox, idle_timeout, notify)
         .await
         .map_err(MonitorError::Monitor)
 }

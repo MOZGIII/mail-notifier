@@ -10,15 +10,18 @@ async fn main() -> color_eyre::eyre::Result<()> {
 
     let config = config_load::with_default_env_var().await?;
     let _keyring_guard = config_bringup::init_keyring_if_needed(&config)?;
-    let monitor_configs = config_bringup::bringup_monitor_configs(&config).await?;
+    let mailboxes = config_bringup::for_monitoring(&config).await?;
     drop(config);
 
     let mut join_set = tokio::task::JoinSet::new();
 
     monitoring_engine::spawn_monitors(monitoring_engine::SpawnMonitorsParams {
-        monitor_configs: &monitor_configs,
-        register_state: |config: &imap_monitor::Config| {
-            Arc::new(format!("{} / {}", config.server_name, config.mailbox))
+        mailboxes: &mailboxes,
+        register_state: |config: &config_bringup::data::Mailbox| {
+            Arc::new(format!(
+                "{} / {}",
+                config.server.server_name, config.mailbox
+            ))
         },
         join_set: &mut join_set,
         mailbox_notify: |update: monitoring_engine::MailboxUpdate<Arc<String>>| async move {

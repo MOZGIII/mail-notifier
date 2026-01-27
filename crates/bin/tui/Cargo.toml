@@ -9,7 +9,6 @@ color-eyre = { workspace = true }
 config-bringup = { workspace = true }
 config-load = { workspace = true }
 crossterm = { workspace = true }
-imap-monitor = { workspace = true }
 monitoring-engine = { workspace = true }
 ratatui = { workspace = true }
 slotmap = { workspace = true }

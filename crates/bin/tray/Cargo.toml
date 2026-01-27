@@ -14,7 +14,6 @@ color-eyre = { workspace = true }
 config-bringup = { workspace = true }
 config-load = { workspace = true }
 icon-render-loop = { workspace = true }
-imap-monitor = { workspace = true }
 monitoring-engine = { workspace = true }
 slotmap = { workspace = true }
 supervisor = { workspace = true }

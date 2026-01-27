@@ -1,0 +1,87 @@
+//! Config structs.
+
+use std::sync::Arc;
+
+/// Fully resolved bringup configuration shared across mailboxes.
+#[derive(Debug, Clone)]
+pub struct Server {
+    /// Human-friendly name for logging and identification.
+    pub server_name: String,
+
+    /// Hostname or IP address of the IMAP server.
+    pub host: String,
+
+    /// IMAP port.
+    pub port: u16,
+
+    /// TLS mode.
+    pub tls_mode: imap_tls::TlsMode,
+
+    /// TLS server name (SNI).
+    pub tls_server_name: String,
+
+    /// IMAP authentication.
+    pub auth: ServerAuth,
+}
+
+/// Fully-resolved IMAP authentication config.
+#[derive(Debug, Clone)]
+pub enum ServerAuth {
+    /// Login with username/password.
+    Login {
+        /// Username for IMAP authentication.
+        username: String,
+
+        /// Password for IMAP authentication.
+        password: String,
+    },
+
+    /// Authenticate with the static OAuth 2 credentials.
+    OAuth2Credentials {
+        /// Username for OAuth2 IMAP authentication.
+        user: String,
+
+        /// Access token for OAuth2 IMAP authentication.
+        access_token: String,
+    },
+}
+
+/// Fully resolved bringup configuration shared across mailboxes.
+#[derive(Debug, Clone)]
+pub struct Mailbox {
+    /// A shared server.
+    pub server: Arc<Server>,
+
+    /// Mailbox name (e.g. INBOX).
+    pub mailbox: imap_utf7::ImapUtf7String,
+
+    /// Idle timeout.
+    pub idle_timeout: std::time::Duration,
+}
+
+impl ServerAuth {
+    /// Convert to [`imap_session::auth::Params].
+    pub fn to_imap_session_auth_params(&self) -> imap_session::auth::Params<'_> {
+        match self {
+            Self::Login { username, password } => {
+                imap_session::auth::Params::Login { username, password }
+            }
+            Self::OAuth2Credentials { user, access_token } => {
+                imap_session::auth::Params::OAuth2 { user, access_token }
+            }
+        }
+    }
+}
+
+impl Server {
+    /// Convert to [`imap_session::SetupParams`].
+    pub fn to_imap_session_params(&self) -> imap_session::SetupParams<'_> {
+        imap_session::SetupParams {
+            host: &self.host,
+            port: self.port,
+            tls_mode: self.tls_mode,
+            tls_server_name: &self.tls_server_name,
+            auth: self.auth.to_imap_session_auth_params(),
+        }
+    }
+}
