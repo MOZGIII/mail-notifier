@@ -7,5 +7,5 @@ publish = false
 [dependencies]
 config-bringup = { workspace = true }
 imap-checker = { workspace = true }
-imap-monitor = { workspace = true }
+imap-service = { workspace = true }
 monitoring-core = { workspace = true }

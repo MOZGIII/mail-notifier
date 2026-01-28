@@ -796,7 +796,6 @@ name = "config-bringup"
 version = "0.1.0"
 dependencies = [
  "config-core",
- "imap-session",
  "imap-tls",
  "imap-utf7",
  "keyring-bridge",
@@ -2519,6 +2518,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "imap-auth"
+version = "0.1.0"
+dependencies = [
+ "async-imap",
+ "imap-connect",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "imap-checker"
 version = "0.1.0"
 dependencies = [
@@ -2526,6 +2534,18 @@ dependencies = [
  "imap-utf7",
  "thiserror 2.0.18",
  "tokio",
+]
+
+[[package]]
+name = "imap-connect"
+version = "0.1.0"
+dependencies = [
+ "async-imap",
+ "imap-tls",
+ "imap-tls-rustls",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -2540,17 +2560,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "imap-monitor"
-version = "0.1.0"
-dependencies = [
- "imap-checker",
- "imap-session",
- "imap-utf7",
- "thiserror 2.0.18",
- "tracing",
-]
-
-[[package]]
 name = "imap-proto"
 version = "0.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2560,15 +2569,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "imap-service"
+version = "0.1.0"
+dependencies = [
+ "config-bringup",
+ "imap-auth",
+ "imap-checker",
+ "imap-connect",
+ "imap-session",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "imap-session"
 version = "0.1.0"
 dependencies = [
- "async-imap",
- "imap-tls",
- "imap-tls-rustls",
+ "imap-auth",
+ "imap-connect",
  "thiserror 2.0.18",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -2946,7 +2964,7 @@ dependencies = [
  "config-bringup",
  "config-load",
  "futures",
- "imap-session",
+ "imap-service",
  "imap-utf7",
  "tokio",
  "tracing",
@@ -3108,7 +3126,7 @@ version = "0.1.0"
 dependencies = [
  "config-bringup",
  "imap-checker",
- "imap-monitor",
+ "imap-service",
  "monitoring-core",
 ]
 
