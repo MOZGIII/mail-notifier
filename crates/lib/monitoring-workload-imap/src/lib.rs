@@ -11,7 +11,7 @@ pub enum Mailbox {}
 impl monitoring_core::Workload for Mailbox {
     type Item = Arc<config_bringup::data::Mailbox>;
     type Update = imap_checker::MailboxCounts;
-    type Error = imap_monitor::MonitorError;
+    type Error = imap_service::MonitorMailboxError;
 
     async fn run<Notify, NotifyFut>(
         item: &Self::Item,
@@ -21,14 +21,6 @@ impl monitoring_core::Workload for Mailbox {
         Notify: FnMut(Self::Update) -> NotifyFut + Send,
         NotifyFut: core::future::Future<Output = ()> + Send,
     {
-        let imap_session = item.server.to_imap_session_params();
-
-        let imap_monitor = imap_monitor::MonitorParams {
-            imap_session,
-            mailbox: &item.mailbox,
-            idle_timeout: item.idle_timeout,
-        };
-
-        imap_monitor::monitor(imap_monitor, notify).await
+        imap_service::monitor_mailbox(item, notify).await
     }
 }

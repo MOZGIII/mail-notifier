@@ -22,7 +22,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
             "listing IMAP mailboxes"
         );
 
-        let mut session = imap_session::setup(server.to_imap_session_params()).await?;
+        let mut session = imap_service::connect_to_server(server).await?;
 
         let mut list_stream = session.list(None, Some("*")).await?;
         println!("{}:", server.server_name);

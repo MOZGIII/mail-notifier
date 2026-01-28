@@ -1,16 +1,7 @@
-//! Authentication.
+//! High-level IMAP authentication utilities.
 
-/// An auth error.
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    /// Login failed.
-    #[error("login: {0}")]
-    Login(async_imap::error::Error),
-
-    /// OAuth2 failed.
-    #[error("oauth2: {0}")]
-    OAuth2(async_imap::error::Error),
-}
+/// The effective session type we use.
+pub type Session = async_imap::Session<imap_connect::Stream>;
 
 /// Auth params.
 #[derive(Debug, Clone, PartialEq)]
@@ -38,11 +29,20 @@ pub enum Params<'a> {
     },
 }
 
+/// An IMAP authentication error.
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    /// Login failed.
+    #[error("login: {0}")]
+    Login(async_imap::error::Error),
+
+    /// OAuth 2 failed.
+    #[error("oauth2: {0}")]
+    OAuth2(async_imap::error::Error),
+}
+
 /// Authenticate to the client to obtain a session.
-pub(crate) async fn execute(
-    client: crate::Client,
-    auth: Params<'_>,
-) -> Result<crate::Session, Error> {
+pub async fn auth(client: imap_connect::Client, auth: Params<'_>) -> Result<Session, Error> {
     match auth {
         Params::Login { username, password } => client
             .login(username, password)

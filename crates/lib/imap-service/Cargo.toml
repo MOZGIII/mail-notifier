@@ -1,12 +1,13 @@
 [package]
-name = "imap-monitor"
+name = "imap-service"
 version = "0.1.0"
 edition = "2024"
 publish = false
 
 [dependencies]
+config-bringup = { workspace = true }
+imap-auth = { workspace = true }
 imap-checker = { workspace = true }
+imap-connect = { workspace = true }
 imap-session = { workspace = true }
-imap-utf7 = { workspace = true }
 thiserror = { workspace = true }
-tracing = { workspace = true }
