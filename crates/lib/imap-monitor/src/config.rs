@@ -1,8 +1,8 @@
 //! Parts to represent fully-resolved config.
 
 /// Fully-resolved IMAP authentication config.
-#[derive(Debug, Clone)]
-pub enum Auth {
+#[derive(Debug)]
+pub enum Auth<OAuth2SessionAccessTokenProvider> {
     /// Login with username/password.
     Login {
         /// Username for IMAP authentication.
@@ -11,12 +11,22 @@ pub enum Auth {
         /// Password for IMAP authentication.
         password: String,
     },
+
     /// Authenticate with the static OAuth 2 credentials.
     OAuth2Credentials {
-        /// Username for OAuth2 IMAP authentication.
+        /// Username for OAuth 2 IMAP authentication.
         user: String,
 
-        /// Access token for OAuth2 IMAP authentication.
+        /// Access token for OAuth 2 IMAP authentication.
         access_token: String,
+    },
+
+    /// Authenticate with the static OAuth 2 credentials.
+    OAuth2Session {
+        /// Username for OAuth 2 IMAP authentication.
+        user: String,
+
+        /// Token provider for the OAuth 2 IMAP authentication.
+        access_token_provider: OAuth2SessionAccessTokenProvider,
     },
 }

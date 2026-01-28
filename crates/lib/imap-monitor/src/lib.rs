@@ -5,8 +5,8 @@ use std::time::Duration;
 pub mod config;
 
 /// Fully resolved mailbox monitoring configuration.
-#[derive(Debug, Clone)]
-pub struct Config {
+#[derive(Debug)]
+pub struct Config<OAuth2SessionAccessTokenProvider> {
     /// Human-friendly name for logging and identification.
     pub server_name: String,
 
@@ -23,7 +23,7 @@ pub struct Config {
     pub tls_server_name: String,
 
     /// IMAP authentication.
-    pub auth: config::Auth,
+    pub auth: config::Auth<OAuth2SessionAccessTokenProvider>,
 
     /// Mailbox name (e.g. INBOX).
     pub mailbox: imap_utf7::ImapUtf7String,
@@ -34,10 +34,14 @@ pub struct Config {
 
 /// Errors returned while monitoring a mailbox.
 #[derive(Debug, thiserror::Error)]
-pub enum MonitorError {
-    /// TLS connector error.
+pub enum MonitorError<OAuth2SessionAccessTokenProviderError> {
+    /// OAuth 2 session error.
+    #[error("getting OAuth 2 token for the session error: {0}")]
+    OAuth2SessionGetToken(#[source] OAuth2SessionAccessTokenProviderError),
+
+    /// IMAP session setup error.
     #[error("IMAP session setup error: {0}")]
-    SessionSetup(#[source] imap_session::SetupError),
+    ImapSessionSetup(#[source] imap_session::SetupError),
 
     /// IMAP monitor error.
     #[error("IMAP monitor error: {0}")]
@@ -45,13 +49,23 @@ pub enum MonitorError {
 }
 
 /// Connect and monitor a mailbox based on provided settings.
-pub async fn monitor<F, Fut>(
-    config: &Config,
-    notify: F,
-) -> Result<core::convert::Infallible, MonitorError>
+pub async fn monitor<
+    OAuth2SessionAccessTokenProvider,
+    OAuth2SessionAccessTokenProviderFut,
+    OAuth2SessionAccessTokenProviderError,
+    Notify,
+    NotifyFut,
+>(
+    config: &Config<OAuth2SessionAccessTokenProvider>,
+    notify: Notify,
+) -> Result<core::convert::Infallible, MonitorError<OAuth2SessionAccessTokenProviderError>>
 where
-    F: FnMut(imap_checker::MailboxCounts) -> Fut + Send,
-    Fut: std::future::Future<Output = ()> + Send,
+    OAuth2SessionAccessTokenProvider: Fn() -> OAuth2SessionAccessTokenProviderFut + Send,
+    OAuth2SessionAccessTokenProviderFut:
+        std::future::Future<Output = Result<String, OAuth2SessionAccessTokenProviderError>> + Send,
+    OAuth2SessionAccessTokenProviderError: std::fmt::Debug,
+    Notify: FnMut(imap_checker::MailboxCounts) -> NotifyFut + Send,
+    NotifyFut: std::future::Future<Output = ()> + Send,
 {
     tracing::info!(
         server_name = %config.server_name,
@@ -62,11 +76,29 @@ where
         "starting IMAP monitor"
     );
 
-    let auth = match &config.auth {
-        config::Auth::Login { username, password } => {
-            imap_session::auth::Params::Login { username, password }
-        }
-        config::Auth::OAuth2Credentials { user, access_token } => {
+    // Used to keep the oauth2 session access token value around until
+    // the imap session initializes.
+    let mut oauth2_session_access_token = None;
+
+    let auth = match config.auth {
+        config::Auth::Login {
+            ref username,
+            ref password,
+        } => imap_session::auth::Params::Login { username, password },
+        config::Auth::OAuth2Credentials {
+            ref user,
+            ref access_token,
+        } => imap_session::auth::Params::OAuth2 { user, access_token },
+        config::Auth::OAuth2Session {
+            ref user,
+            ref access_token_provider,
+        } => {
+            let access_token = (access_token_provider)()
+                .await
+                .map_err(MonitorError::OAuth2SessionGetToken)?;
+
+            let access_token = oauth2_session_access_token.insert(access_token);
+
             imap_session::auth::Params::OAuth2 { user, access_token }
         }
     };
@@ -79,7 +111,9 @@ where
         auth,
     })
     .await
-    .map_err(MonitorError::SessionSetup)?;
+    .map_err(MonitorError::ImapSessionSetup)?;
+
+    drop(oauth2_session_access_token);
 
     imap_checker::monitor_mailbox_counts(session, &config.mailbox, config.idle_timeout, notify)
         .await
