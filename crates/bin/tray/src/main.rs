@@ -15,15 +15,15 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
 
     let config = config_load::with_default_env_var().await?;
     let _keyring_guard = config_bringup::init_keyring_if_needed(&config)?;
-    let monitor_configs = config_bringup::bringup_monitor_configs(&config).await?;
+    let mailboxes = config_bringup::for_monitoring(&config).await?;
     drop(config);
 
     let mut join_set = tokio::task::JoinSet::new();
 
     let mut entries = slotmap::SlotMap::<Key, menu::EntryState>::with_key();
 
-    let register_state = |config: &imap_monitor::Config| {
-        let label = format!("{} / {}", config.server_name, config.mailbox);
+    let register_state = |config: &config_bringup::data::Mailbox| {
+        let label = format!("{} / {}", config.server.server_name, config.mailbox);
         entries.insert(menu::EntryState {
             name: label,
             active: false,
@@ -45,7 +45,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
     };
 
     monitoring_engine::spawn_monitors(monitoring_engine::SpawnMonitorsParams {
-        monitor_configs: &monitor_configs,
+        mailboxes: &mailboxes,
         register_state,
         join_set: &mut join_set,
         mailbox_notify: {

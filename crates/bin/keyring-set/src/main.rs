@@ -32,7 +32,11 @@ async fn main() -> color_eyre::eyre::Result<()> {
         config_core::Auth::Login(config_core::LoginCredentials {
             password: config_core::PasswordSource::Keyring { keyring },
             username,
-        }) => config_bringup::keyring_service_account(keyring, username),
+        }) => config_bringup::keyring::service_account(
+            keyring,
+            username,
+            config_bringup::keyring::DEFAULT_SERVICE,
+        ),
         _ => {
             bail!("Server '{server_name}' does not use keyring credentials in config");
         }

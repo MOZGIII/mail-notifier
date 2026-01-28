@@ -8,7 +8,6 @@ publish = false
 color-eyre = { workspace = true }
 config-bringup = { workspace = true }
 config-load = { workspace = true }
-imap-monitor = { workspace = true }
 monitoring-engine = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
 tracing = { workspace = true }

@@ -32,7 +32,7 @@ pub type SupervisorUpdate<Entry> = Update<
 /// This type bundles borrowed inputs used by `spawn_monitors`.
 pub struct SpawnMonitorsParams<'a, RegisterState, MailboxNotify, SupervisorNotify> {
     /// Slice of monitor configurations to spawn.
-    pub monitor_configs: &'a [imap_monitor::Config],
+    pub mailboxes: &'a [config_bringup::data::Mailbox],
 
     /// Callback used to register each config and produce an `EntryKey`.
     pub register_state: RegisterState,
@@ -59,7 +59,7 @@ pub fn spawn_monitors<
     params: SpawnMonitorsParams<'_, RegisterState, MailboxNotify, SupervisorNotify>,
 ) where
     Entry: Clone + Send + 'static,
-    RegisterState: for<'c> FnMut(&'c imap_monitor::Config) -> Entry,
+    RegisterState: for<'c> FnMut(&'c config_bringup::data::Mailbox) -> Entry,
     MailboxNotify: FnMut(MailboxUpdate<Entry>) -> MailboxNotifyFut + Clone + Send + Sync + 'static,
     MailboxNotifyFut: Future<Output = ()> + Send,
     SupervisorNotify:
@@ -67,14 +67,14 @@ pub fn spawn_monitors<
     SupervisorNotifyFut: Future<Output = ()> + Send,
 {
     let SpawnMonitorsParams {
-        monitor_configs,
+        mailboxes,
         join_set,
         mailbox_notify,
         supervisor_notify,
         mut register_state,
     } = params;
 
-    for config in monitor_configs {
+    for config in mailboxes {
         let entry = (register_state)(config);
 
         let config = Arc::new(config.clone());
@@ -106,7 +106,15 @@ pub fn spawn_monitors<
                     };
 
                     std::panic::AssertUnwindSafe(async move {
-                        imap_monitor::monitor(&config, mailbox_notify).await
+                        let imap_session = config.server.to_imap_session_params();
+
+                        let imap_monitor = imap_monitor::MonitorParams {
+                            imap_session,
+                            mailbox: &config.mailbox,
+                            idle_timeout: config.idle_timeout,
+                        };
+
+                        imap_monitor::monitor(imap_monitor, mailbox_notify).await
                     })
                 }
             };
