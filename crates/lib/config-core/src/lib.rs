@@ -7,6 +7,10 @@
 pub struct Config {
     /// IMAP servers to monitor.
     pub servers: Vec<ServerConfig>,
+
+    /// OAuth 2 client configurations.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub oauth2_clients: std::collections::HashMap<String, OAuth2ClientConfig>,
 }
 
 /// A monitored IMAP server.
@@ -73,6 +77,10 @@ pub enum Auth {
     /// Authneticate via OAuth 2 credentials.
     #[cfg_attr(feature = "serde", serde(rename = "oauth2_credentials"))]
     OAuth2Credentials(OAuth2Credentials),
+
+    /// Authenticate via a managed OAuth 2 session.
+    #[cfg_attr(feature = "serde", serde(rename = "oauth2_session"))]
+    OAuth2Session(OAuth2Session),
 }
 
 /// Login credentials for IMAP authentication.
@@ -99,6 +107,45 @@ pub struct OAuth2Credentials {
     pub access_token: String,
 }
 
+/// Managed OAuth 2 session for IMAP authentication.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
+#[derive(Debug, Clone, PartialEq)]
+pub struct OAuth2Session {
+    /// Username for OAuth 2 IMAP authentication.
+    pub user: String,
+
+    /// OAuth 2 client to use for IMAP authentication.
+    pub oauth2_client: String,
+
+    /// The keyring to use for the OAuth 2 credentials.
+    pub keyring: KeyringRef,
+
+    /// If the token expires in less than this duration - refresh it (secs).
+    pub expiration_immenance_tolerance_secs: Option<u64>,
+}
+
+/// OAuth 2 client configuration.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
+#[derive(Debug, Clone, PartialEq)]
+pub struct OAuth2ClientConfig {
+    /// OAuth 2 client ID.
+    pub client_id: String,
+
+    /// OAuth 2 client secret.
+    pub client_secret: String,
+
+    /// OAuth 2 token URL.
+    pub token_url: String,
+
+    /// OAuth 2 authorization URL.
+    pub auth_url: Option<String>,
+
+    /// OAuth 2 device authorization URL.
+    pub device_authorization_url: Option<String>,
+}
+
 /// Source for a password value.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]
@@ -114,7 +161,7 @@ pub enum PasswordSource {
     },
 }
 
-/// Keyring reference for resolving a password.
+/// Keyring reference for resolving a password or secret.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 #[derive(Debug, Clone, PartialEq)]

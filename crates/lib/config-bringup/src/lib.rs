@@ -78,6 +78,7 @@ async fn server_auth(
             user: oauth2.user.clone(),
             access_token: oauth2.access_token.clone(),
         },
+        config_core::Auth::OAuth2Session(_) => todo!(),
     })
 }
 
