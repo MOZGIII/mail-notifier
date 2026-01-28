@@ -58,30 +58,3 @@ pub struct Mailbox {
     /// Idle timeout.
     pub idle_timeout: std::time::Duration,
 }
-
-impl ServerAuth {
-    /// Convert to [`imap_session::auth::Params].
-    pub fn to_imap_session_auth_params(&self) -> imap_session::auth::Params<'_> {
-        match self {
-            Self::Login { username, password } => {
-                imap_session::auth::Params::Login { username, password }
-            }
-            Self::OAuth2Credentials { user, access_token } => {
-                imap_session::auth::Params::OAuth2 { user, access_token }
-            }
-        }
-    }
-}
-
-impl Server {
-    /// Convert to [`imap_session::SetupParams`].
-    pub fn to_imap_session_params(&self) -> imap_session::SetupParams<'_> {
-        imap_session::SetupParams {
-            host: &self.host,
-            port: self.port,
-            tls_mode: self.tls_mode,
-            tls_server_name: &self.tls_server_name,
-            auth: self.auth.to_imap_session_auth_params(),
-        }
-    }
-}

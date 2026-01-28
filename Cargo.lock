@@ -796,7 +796,6 @@ name = "config-bringup"
 version = "0.1.0"
 dependencies = [
  "config-core",
- "imap-session",
  "imap-tls",
  "imap-utf7",
  "keyring-bridge",
@@ -2519,6 +2518,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "imap-auth"
+version = "0.1.0"
+dependencies = [
+ "async-imap",
+ "imap-connect",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "imap-checker"
 version = "0.1.0"
 dependencies = [
@@ -2526,6 +2534,18 @@ dependencies = [
  "imap-utf7",
  "thiserror 2.0.18",
  "tokio",
+]
+
+[[package]]
+name = "imap-connect"
+version = "0.1.0"
+dependencies = [
+ "async-imap",
+ "imap-tls",
+ "imap-tls-rustls",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -2563,12 +2583,9 @@ dependencies = [
 name = "imap-session"
 version = "0.1.0"
 dependencies = [
- "async-imap",
- "imap-tls",
- "imap-tls-rustls",
+ "imap-auth",
+ "imap-connect",
  "thiserror 2.0.18",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -3107,8 +3124,11 @@ name = "monitoring-workload-imap"
 version = "0.1.0"
 dependencies = [
  "config-bringup",
+ "imap-auth",
  "imap-checker",
+ "imap-connect",
  "imap-monitor",
+ "imap-session",
  "monitoring-core",
 ]
 

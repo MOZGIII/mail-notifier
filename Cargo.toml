@@ -12,7 +12,9 @@ config-yaml = { path = "crates/lib/config-yaml" }
 exp-backoff = { path = "crates/lib/exp-backoff" }
 icon-render = { path = "crates/lib/icon-render" }
 icon-render-loop = { path = "crates/lib/icon-render-loop" }
+imap-auth = { path = "crates/lib/imap-auth" }
 imap-checker = { path = "crates/lib/imap-checker" }
+imap-connect = { path = "crates/lib/imap-connect" }
 imap-monitor = { path = "crates/lib/imap-monitor" }
 imap-session = { path = "crates/lib/imap-session" }
 imap-tls = { path = "crates/lib/imap-tls" }
