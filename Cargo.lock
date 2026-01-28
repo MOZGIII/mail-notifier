@@ -702,7 +702,6 @@ dependencies = [
  "color-eyre",
  "config-bringup",
  "config-load",
- "imap-monitor",
  "monitoring-engine",
  "tokio",
  "tracing",
@@ -796,7 +795,7 @@ name = "config-bringup"
 version = "0.1.0"
 dependencies = [
  "config-core",
- "imap-monitor",
+ "imap-session",
  "imap-tls",
  "imap-utf7",
  "keyring-bridge",
@@ -2545,7 +2544,6 @@ version = "0.1.0"
 dependencies = [
  "imap-checker",
  "imap-session",
- "imap-tls",
  "imap-utf7",
  "thiserror 2.0.18",
  "tracing",
@@ -2947,7 +2945,6 @@ dependencies = [
  "config-bringup",
  "config-load",
  "futures",
- "imap-monitor",
  "imap-session",
  "imap-utf7",
  "tokio",
@@ -3094,6 +3091,7 @@ dependencies = [
 name = "monitoring-engine"
 version = "0.1.0"
 dependencies = [
+ "config-bringup",
  "exp-backoff",
  "imap-checker",
  "imap-monitor",
@@ -5608,7 +5606,6 @@ dependencies = [
  "config-bringup",
  "config-load",
  "icon-render-loop",
- "imap-monitor",
  "monitoring-engine",
  "slotmap",
  "supervisor",
@@ -5663,7 +5660,6 @@ dependencies = [
  "config-bringup",
  "config-load",
  "crossterm",
- "imap-monitor",
  "monitoring-engine",
  "ratatui",
  "slotmap",
