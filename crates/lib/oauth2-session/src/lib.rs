@@ -4,7 +4,10 @@
 
 use oauth2::TokenResponse as _;
 
+pub use oauth2_token_storage_core as token_storage_core;
+
 /// OAuth 2 Session Manager.
+#[derive(Debug)]
 pub struct Manager<
     TokenStorage,
     HasAuthUrl,
