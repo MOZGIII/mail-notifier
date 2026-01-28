@@ -1,9 +1,7 @@
 //! Monitoring engine.
 //!
-//! This crate provides a small helper to spawn mailbox-monitoring tasks
-//! (from `imap-monitor`) under supervision.
-
-use std::sync::Arc;
+//! This crate provides a small helper to spawn generic monitoring tasks
+//! under supervision.
 
 /// Generic update produced by the engine.
 ///
@@ -18,30 +16,34 @@ pub struct Update<Entry, Payload> {
     pub payload: Payload,
 }
 
-/// Mailbox update carrying [`imap_checker::MailboxCounts`].
-pub type MailboxUpdate<Entry> = Update<Entry, imap_checker::MailboxCounts>;
+/// Workload update.
+pub type WorkloadUpdate<Entry, Workload> =
+    Update<Entry, <Workload as monitoring_core::Workload>::Update>;
 
 /// Supervisor update carrying [`supervisor::SupervisorEvent`] values.
-pub type SupervisorUpdate<Entry> = Update<
+pub type SupervisorUpdate<Entry, Workload> = Update<
     Entry,
-    supervisor::SupervisorEvent<core::convert::Infallible, imap_monitor::MonitorError>,
+    supervisor::SupervisorEvent<
+        core::convert::Infallible,
+        <Workload as monitoring_core::Workload>::Error,
+    >,
 >;
 
 /// Parameters for spawning monitors.
 ///
-/// This type bundles borrowed inputs used by `spawn_monitors`.
-pub struct SpawnMonitorsParams<'a, RegisterState, MailboxNotify, SupervisorNotify> {
-    /// Slice of monitor configurations to spawn.
-    pub mailboxes: &'a [config_bringup::data::Mailbox],
+/// This type bundles borrowed inputs used by [`spawn_monitors`].
+pub struct SpawnMonitorsParams<'a, WorkloadItem, RegisterState, WorkloadNotify, SupervisorNotify> {
+    /// Slice of workload items to spawn.
+    pub workload_items: &'a [WorkloadItem],
 
-    /// Callback used to register each config and produce an `EntryKey`.
+    /// Callback used to register each workload and produce an `EntryKey`.
     pub register_state: RegisterState,
 
     /// `JoinSet` to spawn tasks into.
     pub join_set: &'a mut tokio::task::JoinSet<()>,
 
-    /// Notofier used to report mailbox updates.
-    pub mailbox_notify: MailboxNotify,
+    /// Notifier used to report monitored workload updates.
+    pub workload_notify: WorkloadNotify,
 
     /// Notifier used to report supervisor events.
     pub supervisor_notify: SupervisorNotify,
@@ -49,56 +51,71 @@ pub struct SpawnMonitorsParams<'a, RegisterState, MailboxNotify, SupervisorNotif
 
 /// Spawn monitor tasks for the provided configs.
 pub fn spawn_monitors<
+    Workload,
     Entry,
     RegisterState,
-    MailboxNotify,
-    MailboxNotifyFut,
+    WorkloadNotify,
+    WorkloadNotifyFut,
     SupervisorNotify,
     SupervisorNotifyFut,
 >(
-    params: SpawnMonitorsParams<'_, RegisterState, MailboxNotify, SupervisorNotify>,
+    params: SpawnMonitorsParams<
+        '_,
+        Workload::Item,
+        RegisterState,
+        WorkloadNotify,
+        SupervisorNotify,
+    >,
 ) where
+    Workload: monitoring_core::Workload,
     Entry: Clone + Send + 'static,
-    RegisterState: for<'c> FnMut(&'c config_bringup::data::Mailbox) -> Entry,
-    MailboxNotify: FnMut(MailboxUpdate<Entry>) -> MailboxNotifyFut + Clone + Send + Sync + 'static,
-    MailboxNotifyFut: Future<Output = ()> + Send,
-    SupervisorNotify:
-        FnMut(SupervisorUpdate<Entry>) -> SupervisorNotifyFut + Clone + Send + Sync + 'static,
+    RegisterState: for<'item> FnMut(&'item Workload::Item) -> Entry,
+    WorkloadNotify:
+        FnMut(Update<Entry, Workload::Update>) -> WorkloadNotifyFut + Clone + Send + Sync + 'static,
+    WorkloadNotifyFut: Future<Output = ()> + Send,
+    SupervisorNotify: FnMut(SupervisorUpdate<Entry, Workload>) -> SupervisorNotifyFut
+        + Clone
+        + Send
+        + Sync
+        + 'static,
     SupervisorNotifyFut: Future<Output = ()> + Send,
 {
     let SpawnMonitorsParams {
-        mailboxes,
+        workload_items,
         join_set,
-        mailbox_notify,
+        workload_notify,
         supervisor_notify,
         mut register_state,
     } = params;
 
-    for config in mailboxes {
-        let entry = (register_state)(config);
+    for workload_item in workload_items {
+        let entry = (register_state)(workload_item);
 
-        let config = Arc::new(config.clone());
+        let workload_item = workload_item.clone();
 
-        let mailbox_notify = mailbox_notify.clone();
+        let workload_notify = workload_notify.clone();
         let supervisor_notify = supervisor_notify.clone();
 
         join_set.spawn(async move {
             let entry = entry.clone();
+            let workload_item = workload_item.clone();
+
             let work = {
                 let entry = entry.clone();
+                let workload_item = workload_item.clone();
                 move || {
-                    let config = Arc::clone(&config);
+                    let workload_item = workload_item.clone();
 
-                    let mailbox_notify = {
+                    let workload_notify = {
                         let entry = entry.clone();
-                        let mailbox_notify = mailbox_notify.clone();
-                        move |counts| {
+                        let workload_notify = workload_notify.clone();
+                        move |payload| {
                             let entry = entry.clone();
-                            let mut mailbox_notify = mailbox_notify.clone();
+                            let mut workload_notify = workload_notify.clone();
                             async move {
-                                (mailbox_notify)(Update {
+                                (workload_notify)(WorkloadUpdate::<Entry, Workload> {
                                     entry,
-                                    payload: counts,
+                                    payload,
                                 })
                                 .await;
                             }
@@ -106,15 +123,7 @@ pub fn spawn_monitors<
                     };
 
                     std::panic::AssertUnwindSafe(async move {
-                        let imap_session = config.server.to_imap_session_params();
-
-                        let imap_monitor = imap_monitor::MonitorParams {
-                            imap_session,
-                            mailbox: &config.mailbox,
-                            idle_timeout: config.idle_timeout,
-                        };
-
-                        imap_monitor::monitor(imap_monitor, mailbox_notify).await
+                        Workload::run(&workload_item, workload_notify).await
                     })
                 }
             };
@@ -128,8 +137,9 @@ pub fn spawn_monitors<
             let supervisor_notify = move |event| {
                 let entry = entry.clone();
                 let mut supervisor_notify = supervisor_notify.clone();
+
                 async move {
-                    (supervisor_notify)(SupervisorUpdate {
+                    (supervisor_notify)(SupervisorUpdate::<Entry, Workload> {
                         entry,
                         payload: event,
                     })
@@ -147,6 +157,6 @@ pub fn spawn_monitors<
         });
     }
 
-    drop(mailbox_notify);
+    drop(workload_notify);
     drop(supervisor_notify);
 }

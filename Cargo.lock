@@ -703,6 +703,7 @@ dependencies = [
  "config-bringup",
  "config-load",
  "monitoring-engine",
+ "monitoring-workload-imap",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -3088,15 +3089,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "monitoring-core"
+version = "0.1.0"
+
+[[package]]
 name = "monitoring-engine"
 version = "0.1.0"
 dependencies = [
- "config-bringup",
  "exp-backoff",
- "imap-checker",
- "imap-monitor",
+ "monitoring-core",
  "supervisor",
  "tokio",
+]
+
+[[package]]
+name = "monitoring-workload-imap"
+version = "0.1.0"
+dependencies = [
+ "config-bringup",
+ "imap-checker",
+ "imap-monitor",
+ "monitoring-core",
 ]
 
 [[package]]
@@ -5607,6 +5620,7 @@ dependencies = [
  "config-load",
  "icon-render-loop",
  "monitoring-engine",
+ "monitoring-workload-imap",
  "slotmap",
  "supervisor",
  "tao",
@@ -5661,6 +5675,7 @@ dependencies = [
  "config-load",
  "crossterm",
  "monitoring-engine",
+ "monitoring-workload-imap",
  "ratatui",
  "slotmap",
  "supervisor",
