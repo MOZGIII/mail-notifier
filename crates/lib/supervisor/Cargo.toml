@@ -6,4 +6,4 @@ publish = false
 
 [dependencies]
 exp-backoff = { workspace = true }
-futures-util = { workspace = true }
+futures-util = { workspace = true, features = ["std"] }
