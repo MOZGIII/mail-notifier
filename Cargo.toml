@@ -15,7 +15,7 @@ icon-render-loop = { path = "crates/lib/icon-render-loop" }
 imap-auth = { path = "crates/lib/imap-auth" }
 imap-checker = { path = "crates/lib/imap-checker" }
 imap-connect = { path = "crates/lib/imap-connect" }
-imap-monitor = { path = "crates/lib/imap-monitor" }
+imap-service = { path = "crates/lib/imap-service" }
 imap-session = { path = "crates/lib/imap-session" }
 imap-tls = { path = "crates/lib/imap-tls" }
 imap-tls-core = { path = "crates/lib/imap-tls-core" }

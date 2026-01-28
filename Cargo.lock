@@ -2560,23 +2560,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "imap-monitor"
-version = "0.1.0"
-dependencies = [
- "imap-checker",
- "imap-session",
- "imap-utf7",
- "thiserror 2.0.18",
- "tracing",
-]
-
-[[package]]
 name = "imap-proto"
 version = "0.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba1f9b30846c3d04371159ef3a0413ce7c1ae0a8c619cd255c60b3d902553f22"
 dependencies = [
  "nom 7.1.3",
+]
+
+[[package]]
+name = "imap-service"
+version = "0.1.0"
+dependencies = [
+ "config-bringup",
+ "imap-auth",
+ "imap-checker",
+ "imap-connect",
+ "imap-session",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -2963,7 +2964,7 @@ dependencies = [
  "config-bringup",
  "config-load",
  "futures",
- "imap-session",
+ "imap-service",
  "imap-utf7",
  "tokio",
  "tracing",
@@ -3124,11 +3125,8 @@ name = "monitoring-workload-imap"
 version = "0.1.0"
 dependencies = [
  "config-bringup",
- "imap-auth",
  "imap-checker",
- "imap-connect",
- "imap-monitor",
- "imap-session",
+ "imap-service",
  "monitoring-core",
 ]
 
