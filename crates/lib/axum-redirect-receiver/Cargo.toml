@@ -1,0 +1,13 @@
+[package]
+name = "axum-redirect-receiver"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+atomic-take = { workspace = true }
+axum = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["net", "rt"] }
+tokio-util = { workspace = true, features = ["rt"] }
+tracing = { workspace = true }

@@ -35,6 +35,8 @@ tui-view = { path = "crates/lib/tui-view" }
 
 apple-native-keyring-store = "0.2.2"
 async-imap = { version = "0.11", default-features = false, features = ["runtime-tokio"] }
+atomic-take = "1"
+axum = "0.8"
 color-eyre = "0.6"
 cosmic-text = "0.16"
 crossterm = "0.29.0"
@@ -60,6 +62,7 @@ testcontainers = { version = "0.26", default-features = false }
 thiserror = "2"
 tokio = { version = "1", default-features = false }
 tokio-rustls = { version = "0.26", default-features = false, features = ["logging", "ring", "tls12"] }
+tokio-util = "0.7"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 tray-icon = { version = "0.21", default-features = false }
