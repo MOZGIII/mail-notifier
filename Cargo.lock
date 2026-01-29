@@ -3443,6 +3443,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "oauth2-init"
+version = "0.1.0"
+dependencies = [
+ "color-eyre",
+ "config-bringup",
+ "config-core",
+ "config-load",
+ "keyring-bridge",
+ "oauth2",
+ "oauth2-code-receiver",
+ "oauth2-session",
+ "oauth2-token-storage-keyring",
+ "reqwest",
+ "tokio",
+ "tracing-subscriber",
+ "webbrowser",
+]
+
+[[package]]
 name = "oauth2-session"
 version = "0.1.0"
 dependencies = [
@@ -6059,6 +6078,22 @@ checksum = "5a6580f308b1fad9207618087a65c04e7a10bc77e02c8e84e9b00dd4b12fa0bb"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "webbrowser"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "00f1243ef785213e3a32fa0396093424a3a6ea566f9948497e5a2309261a4c97"
+dependencies = [
+ "core-foundation 0.10.1",
+ "jni",
+ "log",
+ "ndk-context",
+ "objc2",
+ "objc2-foundation",
+ "url",
+ "web-sys",
 ]
 
 [[package]]

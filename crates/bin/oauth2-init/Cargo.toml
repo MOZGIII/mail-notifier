@@ -1,0 +1,20 @@
+[package]
+name = "oauth2-init"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+color-eyre = { workspace = true }
+config-bringup = { workspace = true }
+config-core = { workspace = true }
+config-load = { workspace = true }
+keyring-bridge = { workspace = true }
+oauth2 = { workspace = true }
+oauth2-code-receiver = { workspace = true }
+oauth2-session = { workspace = true }
+oauth2-token-storage-keyring = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tracing-subscriber = { workspace = true }
+webbrowser = { workspace = true }

@@ -118,6 +118,9 @@ pub struct OAuth2Session {
     /// OAuth 2 client to use for IMAP authentication.
     pub oauth2_client: String,
 
+    /// A list of scopes to require from the OAuth 2 server.
+    pub oauth2_scopes: Vec<String>,
+
     /// The keyring to use for the OAuth 2 credentials.
     pub keyring: KeyringRef,
 
