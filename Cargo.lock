@@ -3435,6 +3435,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "oauth2-code-receiver"
+version = "0.1.0"
+dependencies = [
+ "axum-redirect-receiver",
+ "serde",
+]
+
+[[package]]
 name = "oauth2-session"
 version = "0.1.0"
 dependencies = [
