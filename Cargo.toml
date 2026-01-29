@@ -26,7 +26,9 @@ keyring-password = { path = "crates/lib/keyring-password" }
 monitoring-core = { path = "crates/lib/monitoring-core" }
 monitoring-engine = { path = "crates/lib/monitoring-engine" }
 monitoring-workload-imap = { path = "crates/lib/monitoring-workload-imap" }
+oauth2-session = { path = "crates/lib/oauth2-session" }
 oauth2-token-storage-core = { path = "crates/lib/oauth2-token-storage-core" }
+oauth2-token-storage-keyring = { path = "crates/lib/oauth2-token-storage-keyring" }
 supervisor = { path = "crates/lib/supervisor" }
 tui-crossterm-guard = { path = "crates/lib/tui-crossterm-guard" }
 tui-view = { path = "crates/lib/tui-view" }

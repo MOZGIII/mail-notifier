@@ -10,5 +10,9 @@ imap-tls = { workspace = true }
 imap-utf7 = { workspace = true }
 keyring-bridge = { workspace = true }
 keyring-password = { workspace = true }
+oauth2 = { workspace = true }
+oauth2-session = { workspace = true }
+oauth2-token-storage-keyring = { workspace = true }
+reqwest = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

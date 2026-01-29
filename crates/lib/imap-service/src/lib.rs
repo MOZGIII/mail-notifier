@@ -63,6 +63,7 @@ pub async fn connect_to_server(
         config_bringup::ServerAuth::OAuth2Credentials { user, access_token } => {
             imap_auth::Params::OAuth2 { user, access_token }
         }
+        config_bringup::ServerAuth::OAuth2Session { .. } => todo!(),
     };
 
     let session = imap_session::Params { connect, auth };

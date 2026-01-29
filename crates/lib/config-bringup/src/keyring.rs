@@ -3,6 +3,9 @@
 /// Default keyring service name.
 pub const DEFAULT_SERVICE: &str = "mail-notifier";
 
+/// OAuth 2 session keyring service name.
+pub const OAUTH2_SESSION_SERVICE: &str = "mail-notifier-oauth2";
+
 /// Keyring service/account pair.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ServiceAccount<'a> {
