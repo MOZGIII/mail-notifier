@@ -60,7 +60,7 @@ pub enum ServerAuth {
         user: String,
 
         /// Token provider for the OAuth 2 IMAP authentication.
-        session_manager: Box<OAuth2SessionManager>,
+        session_manager: Box<tokio::sync::Mutex<OAuth2SessionManager>>,
     },
 }
 

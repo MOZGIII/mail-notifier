@@ -2581,6 +2581,8 @@ dependencies = [
  "imap-checker",
  "imap-connect",
  "imap-session",
+ "oauth2-session",
+ "oauth2-token-storage-keyring",
  "thiserror 2.0.18",
 ]
 
