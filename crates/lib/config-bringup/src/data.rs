@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 /// Fully resolved bringup configuration shared across mailboxes.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Server {
     /// Human-friendly name for logging and identification.
     pub server_name: String,
@@ -25,7 +25,7 @@ pub struct Server {
 }
 
 /// Fully-resolved IMAP authentication config.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum ServerAuth {
     /// Login with username/password.
     Login {
@@ -47,7 +47,7 @@ pub enum ServerAuth {
 }
 
 /// Fully resolved bringup configuration shared across mailboxes.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Mailbox {
     /// A shared server.
     pub server: Arc<Server>,
