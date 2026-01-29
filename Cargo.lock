@@ -875,6 +875,7 @@ name = "config-yaml"
 version = "0.1.0"
 dependencies = [
  "config-core",
+ "serde_path_to_error",
  "serde_yaml_bw",
 ]
 
