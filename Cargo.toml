@@ -3,6 +3,7 @@ resolver = "3"
 members = ["crates/*/*"]
 
 [workspace.dependencies]
+axum-redirect-receiver = { path = "crates/lib/axum-redirect-receiver" }
 config-bringup = { path = "crates/lib/config-bringup" }
 config-core = { path = "crates/lib/config-core" }
 config-load = { path = "crates/lib/config-load" }
