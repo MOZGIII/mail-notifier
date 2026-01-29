@@ -800,6 +800,10 @@ dependencies = [
  "imap-utf7",
  "keyring-bridge",
  "keyring-password",
+ "oauth2",
+ "oauth2-session",
+ "oauth2-token-storage-keyring",
+ "reqwest",
  "thiserror 2.0.18",
  "tokio",
 ]
