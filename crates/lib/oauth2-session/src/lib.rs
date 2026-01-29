@@ -85,9 +85,18 @@ where
             .await
             .map_err(GetTokenError::StorageLoad)?;
 
-        if let Some(expires_at) = data.expires_at
-            && std::time::SystemTime::now() + self.expiration_immenance_tolerance > expires_at
+        let refresh_at = data
+            .expires_at
+            .and_then(|expires_at| expires_at.checked_sub(self.expiration_immenance_tolerance));
+
+        if let Some(refresh_at) = refresh_at
+            && let Err(expired) = refresh_at.duration_since(std::time::SystemTime::now())
         {
+            tracing::debug!(
+                expired_secs = expired.duration().as_secs(),
+                "access token expired",
+            );
+
             let res = self
                 .oauth2_client
                 .exchange_refresh_token(&oauth2::RefreshToken::new(data.refresh_token))

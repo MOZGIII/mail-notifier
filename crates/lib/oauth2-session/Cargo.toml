@@ -9,3 +9,4 @@ oauth2 = { workspace = true, features = ["reqwest"] }
 oauth2-token-storage-core = { workspace = true }
 reqwest = { workspace = true }
 thiserror = { workspace = true }
+tracing = { workspace = true }

@@ -3415,6 +3415,7 @@ dependencies = [
  "oauth2-token-storage-core",
  "reqwest",
  "thiserror 2.0.18",
+ "tracing",
 ]
 
 [[package]]
