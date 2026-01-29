@@ -9,7 +9,7 @@ use std::sync::Arc;
 pub enum Mailbox {}
 
 impl monitoring_core::Workload for Mailbox {
-    type Item = Arc<config_bringup::data::Mailbox>;
+    type Item = Arc<config_bringup::Mailbox>;
     type Update = imap_checker::MailboxCounts;
     type Error = imap_service::MonitorMailboxError;
 

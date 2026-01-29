@@ -20,7 +20,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
     let mut entries: slotmap::SlotMap<slotmap::DefaultKey, tui_view::EntryState> =
         slotmap::SlotMap::with_key();
 
-    let register_state = |config: &Arc<config_bringup::data::Mailbox>| {
+    let register_state = |config: &Arc<config_bringup::Mailbox>| {
         let label = format!("{} / {}", config.server.server_name, config.mailbox);
         entries.insert(tui_view::EntryState {
             name: label,

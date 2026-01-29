@@ -18,7 +18,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
     monitoring_engine::spawn_monitors::<monitoring_workload_imap::Mailbox, _, _, _, _, _, _>(
         monitoring_engine::SpawnMonitorsParams {
             workload_items: &mailboxes,
-            register_state: |config: &Arc<config_bringup::data::Mailbox>| {
+            register_state: |config: &Arc<config_bringup::Mailbox>| {
                 Arc::new(format!(
                     "{} / {}",
                     config.server.server_name, config.mailbox

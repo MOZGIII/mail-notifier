@@ -24,7 +24,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
 
     let mut entries = slotmap::SlotMap::<Key, menu::EntryState>::with_key();
 
-    let register_state = |config: &Arc<config_bringup::data::Mailbox>| {
+    let register_state = |config: &Arc<config_bringup::Mailbox>| {
         let label = format!("{} / {}", config.server.server_name, config.mailbox);
         entries.insert(menu::EntryState {
             name: label,

@@ -1,9 +1,11 @@
-//! Lift raw config into mailbox monitor config.
+//! Bringup the config.
 
 use std::sync::Arc;
 
-pub mod data;
 pub mod keyring;
+mod types;
+
+pub use types::*;
 
 /// Default IDLE timeout (seconds) when not specified in config.
 const DEFAULT_IDLE_TIMEOUT_SECS: u64 = 300;
@@ -32,7 +34,7 @@ pub fn init_keyring_if_needed(
 /// Bringup the server config.
 async fn server(
     server: &config_core::ServerConfig,
-) -> Result<data::Server, ResolveCredentialsError> {
+) -> Result<types::Server, ResolveCredentialsError> {
     let tls_mode = match server.tls.mode {
         config_core::TlsMode::Implicit => imap_tls::TlsMode::Implicit,
         config_core::TlsMode::StartTls => imap_tls::TlsMode::StartTls,
@@ -51,7 +53,7 @@ async fn server(
 
     let auth = server_auth(&server.auth).await?;
 
-    Ok(data::Server {
+    Ok(types::Server {
         server_name: server.name.clone(),
         host: server.host.clone(),
         port,
@@ -64,17 +66,17 @@ async fn server(
 /// Bringup the server auth config.
 async fn server_auth(
     auth: &config_core::Auth,
-) -> Result<data::ServerAuth, ResolveCredentialsError> {
+) -> Result<types::ServerAuth, ResolveCredentialsError> {
     Ok(match auth {
         config_core::Auth::Login(credentials) => {
             let password = resolve_password(credentials).await?;
 
-            data::ServerAuth::Login {
+            types::ServerAuth::Login {
                 username: credentials.username.clone(),
                 password,
             }
         }
-        config_core::Auth::OAuth2Credentials(oauth2) => data::ServerAuth::OAuth2Credentials {
+        config_core::Auth::OAuth2Credentials(oauth2) => types::ServerAuth::OAuth2Credentials {
             user: oauth2.user.clone(),
             access_token: oauth2.access_token.clone(),
         },
@@ -84,16 +86,16 @@ async fn server_auth(
 
 /// Build an IMAP mailbox config.
 fn mailbox(
-    bringup_server: Arc<data::Server>,
+    bringup_server: Arc<types::Server>,
     core_server: &config_core::ServerConfig,
     core_mailbox: &config_core::MailboxConfig,
-) -> data::Mailbox {
+) -> types::Mailbox {
     let idle_timeout_secs = core_mailbox
         .idle_timeout_secs
         .or(core_server.idle_timeout_secs)
         .unwrap_or(DEFAULT_IDLE_TIMEOUT_SECS);
 
-    data::Mailbox {
+    types::Mailbox {
         server: bringup_server,
         mailbox: imap_utf7::ImapUtf7String::from_utf8(&core_mailbox.name),
         idle_timeout: std::time::Duration::from_secs(idle_timeout_secs),
@@ -103,7 +105,7 @@ fn mailbox(
 /// Bringup the full config for monitoring purposes.
 pub async fn for_monitoring(
     core_config: &config_core::Config,
-) -> Result<Vec<Arc<data::Mailbox>>, ResolveCredentialsError> {
+) -> Result<Vec<Arc<types::Mailbox>>, ResolveCredentialsError> {
     let mut list = Vec::new();
 
     for core_server in &core_config.servers {
@@ -124,7 +126,7 @@ pub async fn for_monitoring(
 /// Bringup the partial config for server operations.
 pub async fn servers_only(
     core_config: &config_core::Config,
-) -> Result<Vec<data::Server>, ResolveCredentialsError> {
+) -> Result<Vec<types::Server>, ResolveCredentialsError> {
     let mut list = Vec::new();
 
     for core_server in &core_config.servers {

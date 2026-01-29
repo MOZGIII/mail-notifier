@@ -1,4 +1,4 @@
-//! Config structs.
+//! Config types.
 
 use std::sync::Arc;
 
