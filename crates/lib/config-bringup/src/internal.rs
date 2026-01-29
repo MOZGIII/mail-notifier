@@ -169,9 +169,12 @@ pub async fn server_auth(
                 storage,
             };
 
+            let session_manager = tokio::sync::Mutex::new(session_manager);
+            let session_manager = Box::new(session_manager);
+
             ServerAuth::OAuth2Session {
                 user: oauth2.user.clone(),
-                session_manager: Box::new(session_manager),
+                session_manager,
             }
         }
     })

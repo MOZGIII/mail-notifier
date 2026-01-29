@@ -1,11 +1,25 @@
 //! Mailbox monitoring entrypoint and configuration.
 
+/// Errors returned while connecting to the server.
+#[derive(Debug, thiserror::Error)]
+pub enum ConnectError {
+    /// OAuth 2 session error.
+    #[error("OAuth 2 session error: {0}")]
+    OAuth2Session(
+        #[source] oauth2_session::GetTokenError<oauth2_token_storage_keyring::KeyringTokenStorage>,
+    ),
+
+    /// IMAP session error.
+    #[error("IMAP session error: {0}")]
+    ImapSession(#[source] imap_session::Error),
+}
+
 /// Errors returned while monitoring a mailbox.
 #[derive(Debug, thiserror::Error)]
 pub enum MonitorMailboxError {
-    /// IMAP session error.
-    #[error("IMAP session error: {0}")]
-    Session(#[source] imap_session::Error),
+    /// Connection error.
+    #[error(transparent)]
+    Connect(ConnectError),
 
     /// IMAP monitor error.
     #[error("IMAP monitor error: {0}")]
@@ -29,7 +43,7 @@ where
 
     let session = connect_to_server(server.as_ref())
         .await
-        .map_err(MonitorMailboxError::Session)?;
+        .map_err(MonitorMailboxError::Connect)?;
 
     imap_checker::monitor_mailbox_counts(session, mailbox, *idle_timeout, notify)
         .await
@@ -39,7 +53,7 @@ where
 /// Connect to a server based on provided settings.
 pub async fn connect_to_server(
     server: &config_bringup::Server,
-) -> Result<imap_session::Session, imap_session::Error> {
+) -> Result<imap_session::Session, ConnectError> {
     let config_bringup::Server {
         server_name: _,
         host,
@@ -56,6 +70,8 @@ pub async fn connect_to_server(
         tls_server_name,
     };
 
+    let mut oauth2_session_access_token = None;
+
     let auth = match auth {
         config_bringup::ServerAuth::Login { username, password } => {
             imap_auth::Params::Login { username, password }
@@ -63,10 +79,23 @@ pub async fn connect_to_server(
         config_bringup::ServerAuth::OAuth2Credentials { user, access_token } => {
             imap_auth::Params::OAuth2 { user, access_token }
         }
-        config_bringup::ServerAuth::OAuth2Session { .. } => todo!(),
+        config_bringup::ServerAuth::OAuth2Session {
+            user,
+            session_manager,
+        } => {
+            let mut session_manager = session_manager.lock().await;
+            let access_token = session_manager
+                .get_access_token()
+                .await
+                .map_err(ConnectError::OAuth2Session)?;
+            let access_token = oauth2_session_access_token.insert(access_token);
+            imap_auth::Params::OAuth2 { user, access_token }
+        }
     };
 
     let session = imap_session::Params { connect, auth };
 
-    imap_session::establish(session).await
+    imap_session::establish(session)
+        .await
+        .map_err(ConnectError::ImapSession)
 }
