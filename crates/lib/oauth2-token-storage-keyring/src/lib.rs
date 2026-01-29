@@ -4,7 +4,10 @@ use std::sync::Arc;
 
 use oauth2_token_storage_core::{Data, DataRef, TokenStorage};
 
+pub use keyring_core;
+
 /// Keyring-based token storage.
+#[derive(Debug)]
 pub struct KeyringTokenStorage {
     /// The entry to store the token at.
     pub entry: Arc<keyring_core::Entry>,

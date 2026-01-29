@@ -24,6 +24,15 @@ pub struct Server {
     pub auth: ServerAuth,
 }
 
+/// The alias for the [`oauth2_session::Manager`] with the generic parameters specified.
+pub type OAuth2SessionManager = oauth2_session::Manager<
+    oauth2_token_storage_keyring::KeyringTokenStorage,
+    oauth2::EndpointMaybeSet,
+    oauth2::EndpointMaybeSet,
+    oauth2::EndpointNotSet,
+    oauth2::EndpointNotSet,
+>;
+
 /// Fully-resolved IMAP authentication config.
 #[derive(Debug)]
 pub enum ServerAuth {
@@ -38,11 +47,20 @@ pub enum ServerAuth {
 
     /// Authenticate with the static OAuth 2 credentials.
     OAuth2Credentials {
-        /// Username for OAuth2 IMAP authentication.
+        /// Username for OAuth 2 IMAP authentication.
         user: String,
 
-        /// Access token for OAuth2 IMAP authentication.
+        /// Access token for OAuth 2 IMAP authentication.
         access_token: String,
+    },
+
+    /// Authenticate with the static OAuth 2 credentials.
+    OAuth2Session {
+        /// Username for OAuth 2 IMAP authentication.
+        user: String,
+
+        /// Token provider for the OAuth 2 IMAP authentication.
+        session_manager: Box<tokio::sync::Mutex<OAuth2SessionManager>>,
     },
 }
 

@@ -10,4 +10,6 @@ imap-auth = { workspace = true }
 imap-checker = { workspace = true }
 imap-connect = { workspace = true }
 imap-session = { workspace = true }
+oauth2-session = { workspace = true }
+oauth2-token-storage-keyring = { workspace = true }
 thiserror = { workspace = true }
