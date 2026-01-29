@@ -2,10 +2,14 @@
 
 use std::sync::Arc;
 
+mod error;
 pub mod keyring;
 mod types;
 
-pub use types::*;
+pub(crate) mod internal;
+
+pub use self::error::*;
+pub use self::types::*;
 
 /// Default IDLE timeout (seconds) when not specified in config.
 const DEFAULT_IDLE_TIMEOUT_SECS: u64 = 300;
@@ -20,7 +24,7 @@ pub fn init_keyring_if_needed(
             config_core::Auth::Login(config_core::LoginCredentials {
                 password: config_core::PasswordSource::Keyring { .. },
                 ..
-            })
+            }) | config_core::Auth::OAuth2Session(..)
         )
     });
 
@@ -31,90 +35,23 @@ pub fn init_keyring_if_needed(
     keyring_bridge::KeyringGuard::init_default().map(Some)
 }
 
-/// Bringup the server config.
-async fn server(
-    server: &config_core::ServerConfig,
-) -> Result<types::Server, ResolveCredentialsError> {
-    let tls_mode = match server.tls.mode {
-        config_core::TlsMode::Implicit => imap_tls::TlsMode::Implicit,
-        config_core::TlsMode::StartTls => imap_tls::TlsMode::StartTls,
-    };
-
-    let port = server.port.unwrap_or(match tls_mode {
-        imap_tls::TlsMode::Implicit => 993,
-        imap_tls::TlsMode::StartTls => 143,
-    });
-
-    let tls_server_name = server
-        .tls
-        .server_name
-        .clone()
-        .unwrap_or_else(|| server.host.clone());
-
-    let auth = server_auth(&server.auth).await?;
-
-    Ok(types::Server {
-        server_name: server.name.clone(),
-        host: server.host.clone(),
-        port,
-        tls_mode,
-        tls_server_name,
-        auth,
-    })
-}
-
-/// Bringup the server auth config.
-async fn server_auth(
-    auth: &config_core::Auth,
-) -> Result<types::ServerAuth, ResolveCredentialsError> {
-    Ok(match auth {
-        config_core::Auth::Login(credentials) => {
-            let password = resolve_password(credentials).await?;
-
-            types::ServerAuth::Login {
-                username: credentials.username.clone(),
-                password,
-            }
-        }
-        config_core::Auth::OAuth2Credentials(oauth2) => types::ServerAuth::OAuth2Credentials {
-            user: oauth2.user.clone(),
-            access_token: oauth2.access_token.clone(),
-        },
-        config_core::Auth::OAuth2Session(_) => todo!(),
-    })
-}
-
-/// Build an IMAP mailbox config.
-fn mailbox(
-    bringup_server: Arc<types::Server>,
-    core_server: &config_core::ServerConfig,
-    core_mailbox: &config_core::MailboxConfig,
-) -> types::Mailbox {
-    let idle_timeout_secs = core_mailbox
-        .idle_timeout_secs
-        .or(core_server.idle_timeout_secs)
-        .unwrap_or(DEFAULT_IDLE_TIMEOUT_SECS);
-
-    types::Mailbox {
-        server: bringup_server,
-        mailbox: imap_utf7::ImapUtf7String::from_utf8(&core_mailbox.name),
-        idle_timeout: std::time::Duration::from_secs(idle_timeout_secs),
-    }
-}
-
 /// Bringup the full config for monitoring purposes.
 pub async fn for_monitoring(
     core_config: &config_core::Config,
-) -> Result<Vec<Arc<types::Mailbox>>, ResolveCredentialsError> {
+) -> Result<Vec<Arc<types::Mailbox>>, ConfigError> {
+    let oauth2_context = internal::oauth2_context(core_config)?;
+
     let mut list = Vec::new();
 
     for core_server in &core_config.servers {
-        let bringup_server = server(core_server).await?;
+        let bringup_server = internal::server(core_server, &oauth2_context)
+            .await
+            .map_err(ConfigError::Server)?;
         let bringup_server = Arc::new(bringup_server);
 
         for core_mailbox in &core_server.mailboxes {
             let bringup_server = Arc::clone(&bringup_server);
-            let bringup_mailbox = mailbox(bringup_server, core_server, core_mailbox);
+            let bringup_mailbox = internal::mailbox(bringup_server, core_server, core_mailbox);
             let bringup_mailbox = Arc::new(bringup_mailbox);
             list.push(bringup_mailbox);
         }
@@ -126,43 +63,18 @@ pub async fn for_monitoring(
 /// Bringup the partial config for server operations.
 pub async fn servers_only(
     core_config: &config_core::Config,
-) -> Result<Vec<types::Server>, ResolveCredentialsError> {
-    let mut list = Vec::new();
+) -> Result<Vec<types::Server>, ConfigError> {
+    let oauth2_context = internal::oauth2_context(core_config)?;
+
+    let mut servers = Vec::new();
 
     for core_server in &core_config.servers {
-        let bringup_server = server(core_server).await?;
+        let bringup_server = internal::server(core_server, &oauth2_context)
+            .await
+            .map_err(ConfigError::Server)?;
 
-        list.push(bringup_server);
+        servers.push(bringup_server);
     }
 
-    Ok(list)
-}
-
-/// Resolve the password from config, including keyring lookups.
-async fn resolve_password(
-    credentials: &config_core::LoginCredentials,
-) -> Result<String, ResolveCredentialsError> {
-    match &credentials.password {
-        config_core::PasswordSource::Plain(password) => Ok(password.clone()),
-        config_core::PasswordSource::Keyring { keyring } => {
-            let keyring =
-                keyring::service_account(keyring, &credentials.username, keyring::DEFAULT_SERVICE);
-            let service = keyring.service.to_owned();
-            let account = keyring.account.to_owned();
-
-            let password =
-                tokio::task::spawn_blocking(move || keyring_password::get(&service, &account))
-                    .await
-                    .unwrap()?;
-            Ok(password)
-        }
-    }
-}
-
-/// Errors returned while resolving credentials.
-#[derive(Debug, thiserror::Error)]
-pub enum ResolveCredentialsError {
-    /// Failed to read the password from the keyring.
-    #[error(transparent)]
-    Keyring(#[from] keyring_password::GetError),
+    Ok(servers)
 }
