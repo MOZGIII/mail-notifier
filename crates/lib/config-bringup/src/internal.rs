@@ -2,15 +2,6 @@
 
 use crate::*;
 
-/// Type alias for OAuth 2 client with auth and token endpoints configured.
-pub type OAuth2Client = oauth2::basic::BasicClient<
-    oauth2::EndpointMaybeSet,
-    oauth2::EndpointMaybeSet,
-    oauth2::EndpointNotSet,
-    oauth2::EndpointNotSet,
-    oauth2::EndpointSet,
->;
-
 /// The internal OAuth 2 context.
 pub struct OAuth2Context {
     /// OAuth 2 clietns.
@@ -27,32 +18,7 @@ pub fn oauth2_clients(
     let mut clients = std::collections::HashMap::new();
 
     for (name, config) in oauth2_clients {
-        let client_id = oauth2::ClientId::new(config.client_id.clone());
-        let client_secret = oauth2::ClientSecret::new(config.client_secret.clone());
-
-        let token_url =
-            oauth2::TokenUrl::new(config.token_url.clone()).map_err(OAuth2ClientError::TokenUrl)?;
-
-        let auth_url = config
-            .auth_url
-            .clone()
-            .map(oauth2::AuthUrl::new)
-            .transpose()
-            .map_err(OAuth2ClientError::AuthUrl)?;
-
-        let device_authorization_url = config
-            .device_authorization_url
-            .clone()
-            .map(oauth2::DeviceAuthorizationUrl::new)
-            .transpose()
-            .map_err(OAuth2ClientError::DeviceAuthorizationUrl)?;
-
-        let oauth2_client = oauth2::basic::BasicClient::new(client_id)
-            .set_client_secret(client_secret)
-            .set_token_uri(token_url)
-            .set_auth_uri_option(auth_url)
-            .set_device_authorization_url_option(device_authorization_url);
-
+        let oauth2_client = crate::oauth2_client(config)?;
         clients.insert(name.clone(), oauth2_client);
     }
 

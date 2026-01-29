@@ -27,6 +27,7 @@ keyring-password = { path = "crates/lib/keyring-password" }
 monitoring-core = { path = "crates/lib/monitoring-core" }
 monitoring-engine = { path = "crates/lib/monitoring-engine" }
 monitoring-workload-imap = { path = "crates/lib/monitoring-workload-imap" }
+oauth2-code-receiver = { path = "crates/lib/oauth2-code-receiver" }
 oauth2-session = { path = "crates/lib/oauth2-session" }
 oauth2-token-storage-core = { path = "crates/lib/oauth2-token-storage-core" }
 oauth2-token-storage-keyring = { path = "crates/lib/oauth2-token-storage-keyring" }
@@ -67,4 +68,5 @@ tokio-util = "0.7"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 tray-icon = { version = "0.21", default-features = false }
+webbrowser = "1"
 windows-native-keyring-store = "0.5.1"

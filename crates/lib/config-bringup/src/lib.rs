@@ -78,3 +78,36 @@ pub async fn servers_only(
 
     Ok(servers)
 }
+
+/// Bringup a single OAuth 2 client.
+pub fn oauth2_client(
+    config: &config_core::OAuth2ClientConfig,
+) -> Result<OAuth2Client, OAuth2ClientError> {
+    let client_id = oauth2::ClientId::new(config.client_id.clone());
+    let client_secret = oauth2::ClientSecret::new(config.client_secret.clone());
+
+    let token_url =
+        oauth2::TokenUrl::new(config.token_url.clone()).map_err(OAuth2ClientError::TokenUrl)?;
+
+    let auth_url = config
+        .auth_url
+        .clone()
+        .map(oauth2::AuthUrl::new)
+        .transpose()
+        .map_err(OAuth2ClientError::AuthUrl)?;
+
+    let device_authorization_url = config
+        .device_authorization_url
+        .clone()
+        .map(oauth2::DeviceAuthorizationUrl::new)
+        .transpose()
+        .map_err(OAuth2ClientError::DeviceAuthorizationUrl)?;
+
+    let oauth2_client = oauth2::basic::BasicClient::new(client_id)
+        .set_client_secret(client_secret)
+        .set_token_uri(token_url)
+        .set_auth_uri_option(auth_url)
+        .set_device_authorization_url_option(device_authorization_url);
+
+    Ok(oauth2_client)
+}

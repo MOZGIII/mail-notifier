@@ -76,3 +76,12 @@ pub struct Mailbox {
     /// Idle timeout.
     pub idle_timeout: std::time::Duration,
 }
+
+/// Type alias for OAuth 2 client with auth and token endpoints configured.
+pub type OAuth2Client = oauth2::basic::BasicClient<
+    oauth2::EndpointMaybeSet,
+    oauth2::EndpointMaybeSet,
+    oauth2::EndpointNotSet,
+    oauth2::EndpointNotSet,
+    oauth2::EndpointSet,
+>;
