@@ -26,7 +26,7 @@ pub fn build_menu(entries: &SlotMap<crate::Key, EntryState>) -> Menu {
         let text = if entry.active {
             format!("{}: {} unread", entry.name, entry.unread)
         } else {
-            format!("{}: inactive", entry.name)
+            format!("{}: {} unread (inactive)", entry.name, entry.unread)
         };
         let enabled = entry.view_url.is_some();
         menu.append(&MenuItem::with_id(key, text, enabled, None))
