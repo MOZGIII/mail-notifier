@@ -14,6 +14,9 @@ pub struct EntryState {
 
     /// Number of unread emails.
     pub unread: u32,
+
+    /// The URL to open when user wants to view this mailbox.
+    pub view_url: Option<std::sync::Arc<str>>,
 }
 
 /// Build the tray menu from the current entries.
@@ -25,7 +28,8 @@ pub fn build_menu(entries: &SlotMap<crate::Key, EntryState>) -> Menu {
         } else {
             format!("{}: inactive", entry.name)
         };
-        menu.append(&MenuItem::with_id(key, text, true, None))
+        let enabled = entry.view_url.is_some();
+        menu.append(&MenuItem::with_id(key, text, enabled, None))
             .unwrap();
     }
     menu

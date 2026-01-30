@@ -30,6 +30,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
             name: label,
             active: false,
             unread: 0,
+            view_url: config.view_url.clone(),
         })
     };
 
@@ -156,6 +157,13 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                         && let Some(entry) = entries.get(key)
                     {
                         tracing::info!("Menu item clicked: {}", entry.name);
+
+                        #[allow(clippy::collapsible_if)]
+                        if let Some(ref url) = entry.view_url {
+                            if let Err(error) = webbrowser::open(url) {
+                                tracing::error!(%error, "unable to open web browser");
+                            }
+                        }
                     }
                 }
                 tao::event::Event::WindowEvent {

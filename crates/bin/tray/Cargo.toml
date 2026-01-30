@@ -23,3 +23,4 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 tray-icon = { workspace = true }
+webbrowser = { workspace = true }
