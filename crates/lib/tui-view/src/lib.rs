@@ -1,8 +1,12 @@
 //! Terminal UI rendering.
 
+mod hyperlink;
+
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph};
+
+use self::hyperlink::*;
 
 /// UI state for a mailbox entry.
 #[derive(Debug, Clone)]
@@ -15,6 +19,9 @@ pub struct EntryState {
 
     /// Whether the mailbox is active or not.
     pub active: bool,
+
+    /// The URL to render the mailbox with.
+    pub view_url: Option<std::sync::Arc<str>>,
 }
 
 /// Render the main UI frame.
@@ -41,7 +48,14 @@ where
             entries
                 .iter()
                 .map(|entry| {
-                    ListItem::new(format!("{} — {} new", entry.name, entry.unread)).style({
+                    let text = format!("{} — {} new", entry.name, entry.unread);
+
+                    let content = match entry.view_url {
+                        Some(url) => Hyperlink::new(text, url.as_ref()),
+                        None => text,
+                    };
+
+                    ListItem::new(content).style({
                         let mut s = Style::new();
                         if !entry.active {
                             s = s.italic();

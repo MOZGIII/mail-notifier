@@ -26,6 +26,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
             name: label,
             active: false,
             unread: 0,
+            view_url: config.view_url.clone(),
         })
     };
 

@@ -5780,6 +5780,7 @@ dependencies = [
 name = "tui-view"
 version = "0.1.0"
 dependencies = [
+ "itertools",
  "ratatui",
 ]
 

@@ -5,4 +5,5 @@ edition = "2024"
 publish = false
 
 [dependencies]
+itertools = { workspace = true }
 ratatui = { workspace = true }

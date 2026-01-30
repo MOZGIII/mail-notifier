@@ -49,6 +49,7 @@ envfury = "0.2"
 futures = { version = "0.3", default-features = false }
 futures-util = { version = "0.3", default-features = false }
 image = "0.25"
+itertools = "0.14"
 keyring-core = "0.7.2"
 oauth2 = { version = "5", default-features = false }
 ratatui = "0.30.0"
