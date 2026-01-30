@@ -121,6 +121,9 @@ pub struct OAuth2Session {
     /// A list of scopes to require from the OAuth 2 server.
     pub oauth2_scopes: Vec<String>,
 
+    /// A list of extra params to add to the initial auth with the OAuth 2 server.
+    pub oauth2_init_extra_params: std::collections::HashMap<String, String>,
+
     /// The keyring to use for the OAuth 2 credentials.
     pub keyring: KeyringRef,
 
