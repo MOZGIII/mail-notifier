@@ -153,10 +153,19 @@ pub fn mailbox(
         .or(core_server.idle_timeout_secs)
         .unwrap_or(DEFAULT_IDLE_TIMEOUT_SECS);
 
+    let view_url = core_mailbox
+        .view_url
+        .as_deref()
+        .or(core_server.view_url.as_deref())
+        .map(|val| val.to_owned());
+
+    let view_url = view_url.map(|url| url.into());
+
     Mailbox {
         server: bringup_server,
         mailbox: imap_utf7::ImapUtf7String::from_utf8(&core_mailbox.name),
         idle_timeout: std::time::Duration::from_secs(idle_timeout_secs),
+        view_url,
     }
 }
 
