@@ -39,6 +39,9 @@ pub struct ServerConfig {
 
     /// Idle timeout override for this server (seconds).
     pub idle_timeout_secs: Option<u64>,
+
+    /// URL associated with this server to view the mailbox status.
+    pub view_url: Option<String>,
 }
 
 /// TLS configuration for a server.
@@ -189,4 +192,7 @@ pub struct MailboxConfig {
 
     /// Idle timeout override for this mailbox (seconds).
     pub idle_timeout_secs: Option<u64>,
+
+    /// URL associated with this mailbox to view the mailbox status.
+    pub view_url: Option<String>,
 }
