@@ -105,6 +105,7 @@ where
                 .map_err(GetTokenError::ExchangeRefreshToken)?;
 
             let Some(refresh_token) = res.refresh_token() else {
+                tracing::debug!(?res, "no refresh token in response");
                 return Err(GetTokenError::NoRefreshTokenInResponse);
             };
 
