@@ -14,6 +14,9 @@ pub struct EntryState {
 
     /// Number of unread emails.
     pub unread: u32,
+
+    /// The URL to open when user wants to view this mailbox.
+    pub view_url: Option<std::sync::Arc<str>>,
 }
 
 /// Build the tray menu from the current entries.
