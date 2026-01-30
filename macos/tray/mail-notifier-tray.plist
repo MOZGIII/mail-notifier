@@ -16,5 +16,11 @@
 
   <key>KeepAlive</key>
   <true/>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/mailbox-notifier.job.err</string>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/mailbox-notifier.job.out</string>
 </dict>
 </plist>
