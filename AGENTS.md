@@ -4,7 +4,7 @@ Purpose: give AI coding agents the minimal, actionable context to be productive 
 
 - **Project layout (big picture):** This is a Rust workspace. CLI binaries live under `crates/bin/*`; shared library code lives under `crates/lib/*` (for example the IMAP logic in `crates/lib/imap-checker`). The top-level Cargo.toml defines the workspace and CI/packaging expects the workspace layout.
 
-- **Primary binary:** See [crates/bin/tui/src/main.rs](../crates/bin/tui/src/main.rs) — binaries are intentionally thin: keep business logic in the library crates and call into them from `main`.
+- **Binaries:** Multiple CLI binaries live under `crates/bin/*`, including the TUI application (`tui`), CLI logger (`cli`), tray icon (`tray`), and utility tools (e.g., `oauth2-init`, `keyring-set`, `list`, `icon-render-cli`). Binaries are intentionally thin: keep business logic in the library crates and call into them from `main`.
 
 - **Key library crate:** See [crates/lib/imap-checker](../crates/lib/imap-checker) for core email-checking logic. Prefer to add/modify logic here rather than in the `bin` crate.
 
