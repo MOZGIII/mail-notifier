@@ -19,28 +19,29 @@ async fn main() -> color_eyre::eyre::Result<()> {
         monitoring_engine::SpawnMonitorsParams {
             workload_items: &mailboxes,
             register_state: |config: &Arc<config_bringup::Mailbox>| {
-                Arc::new(format!(
-                    "{} / {}",
-                    config.server.server_name, config.mailbox
-                ))
+                Arc::new(Entry {
+                    label: format!("{} / {}", config.server.server_name, config.mailbox),
+                    view_url: config.view_url.clone(),
+                })
             },
             join_set: &mut join_set,
             workload_notify: |update: monitoring_engine::WorkloadUpdate<
-                Arc<String>,
+                Arc<Entry>,
                 monitoring_workload_imap::Mailbox,
             >| async move {
                 tracing::info!(
-                    label = %update.entry,
+                    label = %update.entry.label,
                     total = %update.payload.total,
                     unread = %update.payload.unread,
+                    view_url = %update.entry.view_url.as_deref().unwrap_or_default(),
                     "mailbox counts update"
                 );
             },
             supervisor_notify: move |update: monitoring_engine::SupervisorUpdate<
-                Arc<String>,
+                Arc<Entry>,
                 monitoring_workload_imap::Mailbox,
             >| async move {
-                tracing::info!(label = %update.entry, status = ?update.payload, "supervisor event");
+                tracing::info!(label = %update.entry.label, status = ?update.payload, "supervisor event");
             },
         },
     );
@@ -50,4 +51,13 @@ async fn main() -> color_eyre::eyre::Result<()> {
     }
 
     Ok(())
+}
+
+/// The entry to maintain to display the mailbox.
+struct Entry {
+    /// The label of the mailbox.
+    pub label: String,
+
+    /// The view URL of the mailbox.
+    pub view_url: Option<Arc<str>>,
 }

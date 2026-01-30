@@ -39,6 +39,7 @@ where
         server,
         mailbox,
         idle_timeout,
+        view_url: _,
     } = mailbox;
 
     let session = connect_to_server(server.as_ref())

@@ -75,6 +75,9 @@ pub struct Mailbox {
 
     /// Idle timeout.
     pub idle_timeout: std::time::Duration,
+
+    /// A URL to navigate to in order to view this mailbox on the web.
+    pub view_url: Option<Arc<str>>,
 }
 
 /// Type alias for OAuth 2 client with auth and token endpoints configured.

@@ -5710,6 +5710,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tray-icon",
+ "webbrowser",
 ]
 
 [[package]]

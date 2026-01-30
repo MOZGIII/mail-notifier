@@ -22,8 +22,10 @@ fn base_server() -> ServerConfig {
         mailboxes: vec![MailboxConfig {
             name: "INBOX".to_string(),
             idle_timeout_secs: None,
+            view_url: None,
         }],
         idle_timeout_secs: None,
+        view_url: None,
     }
 }
 
