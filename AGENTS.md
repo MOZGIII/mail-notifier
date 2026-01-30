@@ -30,3 +30,5 @@ Purpose: give AI coding agents the minimal, actionable context to be productive 
 - **What to avoid / not assume:**
   - Do not modify CI/workflow files without updating `.github/workflows/*` and `build-utils/` where appropriate.
   - Do not move core logic into `bin` crates; keep it in `crates/lib/*`.
+
+- **Adding binaries:** When adding a new binary, ask if Docker support is needed; if so, update Dockerfile, docker-bake.hcl, and GitHub Actions accordingly.
