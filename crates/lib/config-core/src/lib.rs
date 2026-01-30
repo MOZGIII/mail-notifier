@@ -1,5 +1,7 @@
 //! Shared configuration types for mail-notifier.
 
+use std::sync::Arc;
+
 /// Root configuration.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
@@ -41,7 +43,7 @@ pub struct ServerConfig {
     pub idle_timeout_secs: Option<u64>,
 
     /// URL associated with this server to view the mailbox status.
-    pub view_url: Option<String>,
+    pub view_url: Option<Arc<str>>,
 }
 
 /// TLS configuration for a server.
@@ -194,5 +196,5 @@ pub struct MailboxConfig {
     pub idle_timeout_secs: Option<u64>,
 
     /// URL associated with this mailbox to view the mailbox status.
-    pub view_url: Option<String>,
+    pub view_url: Option<Arc<str>>,
 }

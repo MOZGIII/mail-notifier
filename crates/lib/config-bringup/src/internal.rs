@@ -155,11 +155,9 @@ pub fn mailbox(
 
     let view_url = core_mailbox
         .view_url
-        .as_deref()
-        .or(core_server.view_url.as_deref())
-        .map(|val| val.to_owned());
-
-    let view_url = view_url.map(|url| url.into());
+        .as_ref()
+        .or(core_server.view_url.as_ref())
+        .cloned();
 
     Mailbox {
         server: bringup_server,
