@@ -18,14 +18,7 @@ Purpose: give AI coding agents the minimal, actionable context to be productive 
   - Prefer adding crates to `[workspace.dependencies]` in the root `Cargo.toml`, then reference them with `workspace = true` in member crates.
   - Prefer the latest stable crate versions by default unless a compatibility reason is documented.
   - Crates use edition 2024; keep new crates aligned.
-
-- **Repo hygiene tools:**
-  - `deny.toml` configures `cargo-deny`; keep license choices and advisory ignores consistent.
-  - This repo uses `cargo shear` to detect unused dependencies; keep changes compatible with it.
-  - `taplo.toml` defines TOML formatting (key order is enforced for `Cargo.toml`).
-  - `typos.toml` configures spelling checks.
-
-- **Docker / packaging:** The repo contains a `Dockerfile` and `docker-bake.hcl`. CI uses those for producing images — do not assume local Docker is required for small code changes.
+  - Use `cargo deny` for license and security checks; see `deny.toml` for configuration.
 
 - **Code conventions & patterns discovered in repo:**
   - Core logic belongs to library crates under `crates/lib/*` so it can be tested independently and reused by multiple binaries.
@@ -37,9 +30,3 @@ Purpose: give AI coding agents the minimal, actionable context to be productive 
 - **What to avoid / not assume:**
   - Do not modify CI/workflow files without updating `.github/workflows/*` and `build-utils/` where appropriate.
   - Do not move core logic into `bin` crates; keep it in `crates/lib/*`.
-
-- **Quick debugging tips:**
-  - Use `RUST_LOG=debug cargo run -p <binary-name>` to enable debug logging where supported.
-  - Run `cargo test -p <crate-name> -- --nocapture` to see test output in failing cases.
-
-If anything above is unclear or you want more examples drawn from specific files, say which area (build, a crate, or CI) and I will expand this file.
