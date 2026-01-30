@@ -97,16 +97,23 @@ where
                 "access token expired",
             );
 
+            let old_refresh_token = oauth2::RefreshToken::new(data.refresh_token);
+
             let res = self
                 .oauth2_client
-                .exchange_refresh_token(&oauth2::RefreshToken::new(data.refresh_token))
+                .exchange_refresh_token(&old_refresh_token)
                 .request_async(&self.http_client)
                 .await
                 .map_err(GetTokenError::ExchangeRefreshToken)?;
 
-            let Some(refresh_token) = res.refresh_token() else {
-                tracing::debug!(?res, "no refresh token in response");
-                return Err(GetTokenError::NoRefreshTokenInResponse);
+            let new_refresh_token = match res.refresh_token() {
+                Some(val) => val,
+                None => {
+                    tracing::debug!(?res, "no refresh token in response, re-using the old one");
+
+                    // Re-use the old refresh token.
+                    &old_refresh_token
+                }
             };
 
             data = oauth2_token_storage_core::Data {
@@ -114,7 +121,7 @@ where
                 expires_at: res
                     .expires_in()
                     .map(|expires_in| std::time::SystemTime::now() + expires_in),
-                refresh_token: refresh_token.secret().clone(),
+                refresh_token: new_refresh_token.secret().clone(),
             };
 
             self.storage
