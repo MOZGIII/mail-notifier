@@ -64,12 +64,19 @@ async fn main() -> color_eyre::eyre::Result<()> {
         .iter()
         .map(|scope| oauth2::Scope::new(scope.into()));
 
-    let (auth_url, expected_csrf_token) = oauth2_client
-        .authorize_url(oauth2::CsrfToken::new_random)
-        .add_scopes(scopes)
-        .set_pkce_challenge(pkce_challenge)
-        .set_redirect_uri(std::borrow::Cow::Borrowed(&redirect_url))
-        .url();
+    let (auth_url, expected_csrf_token) = {
+        let mut req = oauth2_client
+            .authorize_url(oauth2::CsrfToken::new_random)
+            .add_scopes(scopes);
+
+        for (k, v) in &oauth2_session_config.oauth2_init_extra_params {
+            req = req.add_extra_param(k, v);
+        }
+
+        req.set_pkce_challenge(pkce_challenge)
+            .set_redirect_uri(std::borrow::Cow::Borrowed(&redirect_url))
+            .url()
+    };
 
     println!("Browse to: {}", auth_url);
     let _ = webbrowser::open(auth_url.as_str());
