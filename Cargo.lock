@@ -2584,6 +2584,7 @@ dependencies = [
  "async-imap",
  "imap-tls",
  "imap-tls-rustls",
+ "socket2",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
