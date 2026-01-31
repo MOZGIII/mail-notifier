@@ -1,13 +1,11 @@
 //! Lightweight async harness for supervised task execution.
 
-#![no_std]
-
 extern crate alloc;
 
-use core::future::Future;
-use core::panic::UnwindSafe;
-use core::time::Duration;
 use futures_util::FutureExt;
+use std::future::Future;
+use std::panic::UnwindSafe;
+use std::time::{Duration, Instant};
 
 /// The panic payload type alias.
 type PanicPayload = alloc::boxed::Box<dyn core::any::Any + Send + 'static>;
@@ -63,6 +61,9 @@ pub struct Params<Work, Notifier, Sleep> {
 
     /// The exponential backoff configuration for the retries.
     pub retries_backoff: exp_backoff::State,
+
+    /// Cooldown period for resetting backoff.
+    pub cooldown: Duration,
 }
 
 /// Run once: notify start, run work, notify result.
@@ -76,6 +77,9 @@ pub async fn run<Work, WorkFut, Notifier, NotifierFut, Sleep, SleepFut, Value, E
     Sleep: FnMut(Duration) -> SleepFut,
     SleepFut: Future<Output = ()>,
 {
+    let initial_delay = params.retries_backoff.value;
+    let mut last_reset = Instant::now();
+
     loop {
         (params.notifier)(SupervisorEvent::Started).await;
 
@@ -83,30 +87,28 @@ pub async fn run<Work, WorkFut, Notifier, NotifierFut, Sleep, SleepFut, Value, E
         let work_future = core::panic::AssertUnwindSafe(async { (params.work)().await });
         let result = work_future.catch_unwind().await;
 
-        let delay = match result {
+        if last_reset.elapsed() >= params.cooldown {
+            params.retries_backoff.value = initial_delay;
+            last_reset = Instant::now();
+        }
+        let delay = params.retries_backoff.take_and_advance();
+
+        let event = match result {
             Ok(Ok(value)) => {
                 (params.notifier)(SupervisorEvent::Done { value }).await;
                 return;
             }
-            Ok(Err(error)) => {
-                let delay = params.retries_backoff.advance();
-                (params.notifier)(SupervisorEvent::Error {
-                    error,
-                    next_retry_in: delay,
-                })
-                .await;
-                delay
-            }
-            Err(panic_payload) => {
-                let delay = params.retries_backoff.advance();
-                (params.notifier)(SupervisorEvent::Panicked {
-                    panic_payload,
-                    next_retry_in: delay,
-                })
-                .await;
-                delay
-            }
+            Ok(Err(error)) => SupervisorEvent::Error {
+                error,
+                next_retry_in: delay,
+            },
+            Err(panic_payload) => SupervisorEvent::Panicked {
+                panic_payload,
+                next_retry_in: delay,
+            },
         };
+
+        (params.notifier)(event).await;
 
         (params.sleep)(delay).await;
     }
