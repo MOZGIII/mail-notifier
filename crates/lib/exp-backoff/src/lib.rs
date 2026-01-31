@@ -21,7 +21,7 @@ pub struct State {
 
 impl State {
     /// Obtain the stored delay value and precompute next one.
-    pub fn advance(&mut self) -> Duration {
+    pub fn take_and_advance(&mut self) -> Duration {
         let current = self.value;
         self.value = current.saturating_mul(self.factor).min(self.max);
         current

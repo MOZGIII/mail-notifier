@@ -134,6 +134,8 @@ pub fn spawn_monitors<
                 value: core::time::Duration::from_secs(1),
             };
 
+            let cooldown = core::time::Duration::from_secs(300);
+
             let supervisor_notify = move |event| {
                 let entry = entry.clone();
                 let mut supervisor_notify = supervisor_notify.clone();
@@ -152,6 +154,7 @@ pub fn spawn_monitors<
                 notifier: supervisor_notify,
                 sleep: tokio::time::sleep,
                 retries_backoff,
+                cooldown,
             })
             .await
         });
