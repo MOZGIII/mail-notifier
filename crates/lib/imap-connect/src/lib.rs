@@ -29,6 +29,10 @@ pub enum Error {
     #[error("TCP connection error: {0}")]
     TcpConnect(#[source] std::io::Error),
 
+    /// TCP keepalive configuration error.
+    #[error("TCP keepalive configuration error: {0}")]
+    TcpKeepalive(#[source] std::io::Error),
+
     /// IMAP TLS connector error.
     #[error("IMAP TLS connector error: {0}")]
     ImapTlsConnector(#[source] imap_tls_rustls::TlsConnectError),
@@ -58,6 +62,15 @@ pub async fn connect(params: Params<'_>) -> Result<Client, Error> {
     let tcp_stream = tokio::net::TcpStream::connect((host, port))
         .await
         .map_err(Error::TcpConnect)?;
+
+    let sock_ref = socket2::SockRef::from(&tcp_stream);
+    let mut ka = socket2::TcpKeepalive::new();
+    ka = ka.with_time(std::time::Duration::from_secs(20));
+    ka = ka.with_interval(std::time::Duration::from_secs(20));
+    sock_ref
+        .set_tcp_keepalive(&ka)
+        .map_err(Error::TcpKeepalive)?;
+
     let tls_connector = imap_tls_rustls::connector().map_err(Error::ImapTlsConnector)?;
     let client = imap_tls::connect(tcp_stream, tls_server_name, tls_mode, tls_connector)
         .await

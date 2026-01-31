@@ -8,6 +8,7 @@ publish = false
 async-imap = { workspace = true }
 imap-tls = { workspace = true }
 imap-tls-rustls = { workspace = true }
+socket2 = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["net"] }
 tracing = { workspace = true }
