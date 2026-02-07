@@ -21,6 +21,8 @@ impl monitoring_core::Workload for Mailbox {
         Notify: FnMut(Self::Update) -> NotifyFut + Send,
         NotifyFut: core::future::Future<Output = ()> + Send,
     {
-        imap_service::monitor_mailbox(item, notify).await
+        imap_service::monitor_mailbox(item, notify)
+            .await
+            .inspect_err(|error| tracing::error!(message = "mailbox monitoring failed", ?error))
     }
 }
