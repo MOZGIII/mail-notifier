@@ -9,3 +9,4 @@ config-bringup = { workspace = true }
 imap-checker = { workspace = true }
 imap-service = { workspace = true }
 monitoring-core = { workspace = true }
+tracing = { workspace = true }
