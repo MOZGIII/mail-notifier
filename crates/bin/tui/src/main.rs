@@ -84,7 +84,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
                 }
             }
             Some(update) = mailbox_receiver.recv() => {
-                let effects = state.process_unread_update(update.entry, update.payload.unread);
+                let effects = state.process_workload_update(update.entry, &update.payload);
                 if effects.new_mail {
                     tracing::info!("new mail detected");
                 }
@@ -92,10 +92,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
                 tui_view::render(&mut terminal, entry_views(&state))?;
             }
             Some(update) = supervisor_receiver.recv() => {
-                state.set_active(
-                    update.entry,
-                    matches!(update.payload, supervisor::SupervisorEvent::Started),
-                );
+                state.process_supervisor_update(update.entry, &update.payload);
 
                 tui_view::render(&mut terminal, entry_views(&state))?;
             }

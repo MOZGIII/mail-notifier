@@ -18,7 +18,6 @@ mail-state-machine = { workspace = true }
 monitoring-engine = { workspace = true }
 monitoring-workload-imap = { workspace = true }
 slotmap = { workspace = true }
-supervisor = { workspace = true }
 tao = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"] }
 tracing = { workspace = true }

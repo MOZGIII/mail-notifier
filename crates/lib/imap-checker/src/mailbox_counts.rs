@@ -9,3 +9,9 @@ pub struct MailboxCounts {
     /// Messages that are unread.
     pub unread: u32,
 }
+
+impl mail_state_machine_core::HasUnread for MailboxCounts {
+    fn unread(&self) -> u32 {
+        self.unread
+    }
+}

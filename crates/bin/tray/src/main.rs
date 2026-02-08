@@ -129,7 +129,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                     let _ = new_icon_text_sender.blocking_send(state.total_unread().to_string());
                 }
                 tao::event::Event::UserEvent(UserEvent::WorkloadUpdate(update)) => {
-                    let effects = state.process_unread_update(update.entry, update.payload.unread);
+                    let effects = state.process_workload_update(update.entry, &update.payload);
                     if effects.new_mail {
                         tracing::info!("new mail detected");
                     }
@@ -139,10 +139,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                     update_tray_menu(&mut tray_icon, &state);
                 }
                 tao::event::Event::UserEvent(UserEvent::SupervisorUpdate(update)) => {
-                    state.set_active(
-                        update.entry,
-                        matches!(update.payload, supervisor::SupervisorEvent::Started),
-                    );
+                    state.process_supervisor_update(update.entry, &update.payload);
                     update_tray_menu(&mut tray_icon, &state);
                 }
                 tao::event::Event::UserEvent(UserEvent::NewIcon(icon)) => {
