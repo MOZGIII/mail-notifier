@@ -6,7 +6,7 @@
 use slotmap::{Key, SlotMap};
 use supervisor::SupervisorEvent;
 
-pub use mail_state_machine_core::HasUnread;
+pub use mail_state_machine_core::WorkloadPayload;
 
 /// The outcome of processing a workload update.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -130,7 +130,7 @@ impl<UserData> UpdateProcessor<'_, UserData> {
     ///
     /// The very first update establishes a baseline and never
     /// sets [`new_mail`](WorkloadEffects::new_mail).
-    pub fn workload(&mut self, payload: &impl HasUnread) -> WorkloadEffects {
+    pub fn workload(&mut self, payload: &impl WorkloadPayload) -> WorkloadEffects {
         let unread = payload.unread();
         let old_total = self.totals.unread;
         let prev_unread = self.entry.tracked.unread;

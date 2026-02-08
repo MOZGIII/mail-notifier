@@ -10,7 +10,7 @@ pub struct MailboxCounts {
     pub unread: u32,
 }
 
-impl mail_state_machine_core::HasUnread for MailboxCounts {
+impl mail_state_machine_core::WorkloadPayload for MailboxCounts {
     fn unread(&self) -> u32 {
         self.unread
     }

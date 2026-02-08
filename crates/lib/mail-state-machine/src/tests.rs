@@ -3,7 +3,7 @@ use super::*;
 /// Test payload carrying an unread count.
 struct Payload(u32);
 
-impl HasUnread for Payload {
+impl WorkloadPayload for Payload {
     fn unread(&self) -> u32 {
         self.0
     }
