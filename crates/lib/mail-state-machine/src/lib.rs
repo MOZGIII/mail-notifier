@@ -15,7 +15,7 @@ pub use mail_state_machine_core::HasUnread;
 
 /// The outcome of processing a workload update.
 ///
-/// Returned by [`State::process_workload_update`].
+/// Returned by [`UpdateProcessor::workload`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Effects {
     /// Whether new mail was detected — the unread count for this specific
@@ -100,9 +100,9 @@ impl<K: Key, UserData> State<K, UserData> {
     /// Register a new mailbox entry with the given user data and return
     /// its key.
     ///
-    /// The entry starts with no unread count — the first
-    /// [`process_workload_update`](Self::process_workload_update) call will
-    /// establish the baseline without emitting [`Effects::new_mail`].
+    /// The entry starts with no unread count — the first workload
+    /// update via [`UpdateProcessor::workload`] will establish the
+    /// baseline without emitting [`Effects::new_mail`].
     pub fn insert(&mut self, user_data: UserData) -> K {
         self.entries.insert(Entry {
             user_data,
@@ -113,57 +113,18 @@ impl<K: Key, UserData> State<K, UserData> {
         })
     }
 
-    /// Process a workload update for a mailbox entry.
+    /// Begin processing an update for the entry identified by `key`.
     ///
-    /// Accepts any payload implementing [`HasUnread`] and returns
-    /// [`Effects`] describing what happened:
-    ///
-    /// - [`new_mail`](Effects::new_mail) is `true` when the new `unread`
-    ///   count is strictly greater than the previously recorded count for
-    ///   this entry **and** a baseline was already established. The very
-    ///   first update for an entry establishes a baseline and never sets
-    ///   `new_mail`.
-    ///
-    /// - [`total_unread_changed`](Effects::total_unread_changed) is
-    ///   [`Some(new_total)`] when the global total changed.
-    pub fn process_workload_update(&mut self, entry: K, payload: &impl HasUnread) -> Effects {
-        let unread = payload.unread();
-        let old_total = self.total_unread;
-        let mut new_mail = false;
-
-        if let Some(state) = self.entries.get_mut(entry) {
-            let prev = state.tracked.unread.unwrap_or(0);
-            self.total_unread = self.total_unread - prev + unread;
-            if let Some(old) = state.tracked.unread
-                && unread > old
-            {
-                new_mail = true;
-            }
-            state.tracked.unread = Some(unread);
-        }
-
-        let total_unread_changed = if self.total_unread != old_total {
-            Some(self.total_unread)
-        } else {
-            None
-        };
-
-        Effects {
-            new_mail,
-            total_unread_changed,
-        }
-    }
-
-    /// Process a [`SupervisorEvent`], updating the active state of the
-    /// entry.
-    ///
-    /// [`SupervisorEvent::Started`] marks the entry as active; all other
-    /// variants mark it as inactive.
-    pub fn process_supervisor_update<T, E>(&mut self, entry: K, event: &SupervisorEvent<T, E>) {
-        let active = matches!(event, SupervisorEvent::Started);
-        if let Some(state) = self.entries.get_mut(entry) {
-            state.tracked.active = active;
-        }
+    /// Returns [`None`] when the key is not found.  The returned
+    /// [`UpdateProcessor`] exposes [`workload`](UpdateProcessor::workload)
+    /// and [`supervisor`](UpdateProcessor::supervisor) methods for
+    /// applying the actual update.
+    pub fn process_update(&mut self, key: K) -> Option<UpdateProcessor<'_, UserData>> {
+        let entry = self.entries.get_mut(key)?;
+        Some(UpdateProcessor {
+            entry,
+            total_unread: &mut self.total_unread,
+        })
     }
 
     /// Total unread count across all tracked mailboxes.
@@ -199,6 +160,63 @@ impl<K: Key, UserData> State<K, UserData> {
     }
 }
 
+/// Handle for applying updates to a single entry.
+///
+/// Obtained via [`State::process_update`].  Borrows the state machine
+/// mutably for the duration, keeping the entry and global counters
+/// consistent.
+pub struct UpdateProcessor<'a, UserData> {
+    /// The entry being updated.
+    entry: &'a mut Entry<UserData>,
+    /// Shared total-unread counter.
+    total_unread: &'a mut u32,
+}
+
+impl<UserData> UpdateProcessor<'_, UserData> {
+    /// Apply a workload update, returning the resulting [`Effects`].
+    ///
+    /// - [`new_mail`](Effects::new_mail) is `true` when the new `unread`
+    ///   count is strictly greater than the previously recorded count
+    ///   **and** a baseline was already established.  The very first
+    ///   update establishes a baseline and never sets `new_mail`.
+    ///
+    /// - [`total_unread_changed`](Effects::total_unread_changed) is
+    ///   [`Some(new_total)`] when the global total changed.
+    pub fn workload(&mut self, payload: &impl HasUnread) -> Effects {
+        let unread = payload.unread();
+        let old_total = *self.total_unread;
+        let mut new_mail = false;
+
+        let prev = self.entry.tracked.unread.unwrap_or(0);
+        *self.total_unread = *self.total_unread - prev + unread;
+        if let Some(old) = self.entry.tracked.unread
+            && unread > old
+        {
+            new_mail = true;
+        }
+        self.entry.tracked.unread = Some(unread);
+
+        let total_unread_changed = if *self.total_unread != old_total {
+            Some(*self.total_unread)
+        } else {
+            None
+        };
+
+        Effects {
+            new_mail,
+            total_unread_changed,
+        }
+    }
+
+    /// Apply a [`SupervisorEvent`], updating the entry's active state.
+    ///
+    /// [`SupervisorEvent::Started`] marks the entry as active; all other
+    /// variants mark it as inactive.
+    pub fn supervisor<T, E>(&mut self, event: &SupervisorEvent<T, E>) {
+        self.entry.tracked.active = matches!(event, SupervisorEvent::Started);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -216,7 +234,7 @@ mod tests {
     fn baseline_does_not_fire_new_mail() {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let inbox = state.insert(());
-        let effects = state.process_workload_update(inbox, &Payload(5));
+        let effects = state.process_update(inbox).unwrap().workload(&Payload(5));
         assert!(!effects.new_mail);
         assert_eq!(effects.total_unread_changed, Some(5));
     }
@@ -225,7 +243,7 @@ mod tests {
     fn baseline_zero_does_not_change_total() {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let inbox = state.insert(());
-        let effects = state.process_workload_update(inbox, &Payload(0));
+        let effects = state.process_update(inbox).unwrap().workload(&Payload(0));
         assert!(!effects.new_mail);
         assert_eq!(effects.total_unread_changed, None);
     }
@@ -234,9 +252,9 @@ mod tests {
     fn increase_fires_new_mail() {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let inbox = state.insert(());
-        state.process_workload_update(inbox, &Payload(3));
+        state.process_update(inbox).unwrap().workload(&Payload(3));
 
-        let effects = state.process_workload_update(inbox, &Payload(4));
+        let effects = state.process_update(inbox).unwrap().workload(&Payload(4));
         assert!(effects.new_mail);
         assert_eq!(effects.total_unread_changed, Some(4));
     }
@@ -245,9 +263,9 @@ mod tests {
     fn decrease_does_not_fire() {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let inbox = state.insert(());
-        state.process_workload_update(inbox, &Payload(5));
+        state.process_update(inbox).unwrap().workload(&Payload(5));
 
-        let effects = state.process_workload_update(inbox, &Payload(3));
+        let effects = state.process_update(inbox).unwrap().workload(&Payload(3));
         assert!(!effects.new_mail);
         assert_eq!(effects.total_unread_changed, Some(3));
     }
@@ -256,9 +274,9 @@ mod tests {
     fn same_count_does_not_fire() {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let inbox = state.insert(());
-        state.process_workload_update(inbox, &Payload(5));
+        state.process_update(inbox).unwrap().workload(&Payload(5));
 
-        let effects = state.process_workload_update(inbox, &Payload(5));
+        let effects = state.process_update(inbox).unwrap().workload(&Payload(5));
         assert!(!effects.new_mail);
         assert_eq!(effects.total_unread_changed, None);
     }
@@ -269,15 +287,15 @@ mod tests {
         let a = state.insert(());
         let b = state.insert(());
         // Baselines.
-        state.process_workload_update(a, &Payload(3));
-        state.process_workload_update(b, &Payload(7));
+        state.process_update(a).unwrap().workload(&Payload(3));
+        state.process_update(b).unwrap().workload(&Payload(7));
 
         // +1 on a, -1 on b → should still fire new_mail for a.
-        let effects_a = state.process_workload_update(a, &Payload(4));
+        let effects_a = state.process_update(a).unwrap().workload(&Payload(4));
         assert!(effects_a.new_mail);
         assert_eq!(effects_a.total_unread_changed, Some(11));
 
-        let effects_b = state.process_workload_update(b, &Payload(6));
+        let effects_b = state.process_update(b).unwrap().workload(&Payload(6));
         assert!(!effects_b.new_mail);
         assert_eq!(effects_b.total_unread_changed, Some(10));
     }
@@ -287,19 +305,19 @@ mod tests {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let a = state.insert(());
         let b = state.insert(());
-        state.process_workload_update(a, &Payload(3));
-        state.process_workload_update(b, &Payload(7));
+        state.process_update(a).unwrap().workload(&Payload(3));
+        state.process_update(b).unwrap().workload(&Payload(7));
         // total = 10
 
         // +1 on a → total 11
-        state.process_workload_update(a, &Payload(4));
+        state.process_update(a).unwrap().workload(&Payload(4));
 
         // -1 on b → total back to 10
-        let effects = state.process_workload_update(b, &Payload(6));
+        let effects = state.process_update(b).unwrap().workload(&Payload(6));
         assert_eq!(effects.total_unread_changed, Some(10));
 
         // Now set both to same → no total change.
-        let effects = state.process_workload_update(a, &Payload(4));
+        let effects = state.process_update(a).unwrap().workload(&Payload(4));
         assert_eq!(effects.total_unread_changed, None);
     }
 
@@ -308,8 +326,8 @@ mod tests {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let a = state.insert(());
         let b = state.insert(());
-        state.process_workload_update(a, &Payload(3));
-        state.process_workload_update(b, &Payload(7));
+        state.process_update(a).unwrap().workload(&Payload(3));
+        state.process_update(b).unwrap().workload(&Payload(7));
 
         assert_eq!(state.total_unread(), 10);
     }
@@ -321,7 +339,7 @@ mod tests {
         // Freshly inserted — no updates yet.
         assert_eq!(state.get(inbox).map(|e| e.tracked().unread), Some(None));
 
-        state.process_workload_update(inbox, &Payload(5));
+        state.process_update(inbox).unwrap().workload(&Payload(5));
         assert_eq!(state.get(inbox).map(|e| e.tracked().unread), Some(Some(5)));
     }
 
@@ -339,9 +357,9 @@ mod tests {
     fn increase_from_zero_fires() {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let inbox = state.insert(());
-        state.process_workload_update(inbox, &Payload(0));
+        state.process_update(inbox).unwrap().workload(&Payload(0));
 
-        let effects = state.process_workload_update(inbox, &Payload(1));
+        let effects = state.process_update(inbox).unwrap().workload(&Payload(1));
         assert!(effects.new_mail);
         assert_eq!(effects.total_unread_changed, Some(1));
     }
@@ -350,10 +368,10 @@ mod tests {
     fn reconnect_fires_on_higher_count() {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let inbox = state.insert(());
-        state.process_workload_update(inbox, &Payload(5));
+        state.process_update(inbox).unwrap().workload(&Payload(5));
 
         // Reconnect reports a higher count — new_mail fires.
-        let effects = state.process_workload_update(inbox, &Payload(7));
+        let effects = state.process_update(inbox).unwrap().workload(&Payload(7));
         assert!(effects.new_mail);
         assert_eq!(effects.total_unread_changed, Some(7));
     }
@@ -362,10 +380,10 @@ mod tests {
     fn reconnect_same_count_does_not_fire() {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let inbox = state.insert(());
-        state.process_workload_update(inbox, &Payload(5));
+        state.process_update(inbox).unwrap().workload(&Payload(5));
 
         // Reconnect reports the same count — no new_mail, no total change.
-        let effects = state.process_workload_update(inbox, &Payload(5));
+        let effects = state.process_update(inbox).unwrap().workload(&Payload(5));
         assert!(!effects.new_mail);
         assert_eq!(effects.total_unread_changed, None);
     }
@@ -395,8 +413,8 @@ mod tests {
         let mut state = State::<slotmap::DefaultKey, &str>::new();
         let a = state.insert("a");
         let b = state.insert("b");
-        state.process_workload_update(a, &Payload(3));
-        state.process_workload_update(b, &Payload(7));
+        state.process_update(a).unwrap().workload(&Payload(3));
+        state.process_update(b).unwrap().workload(&Payload(7));
 
         let items: Vec<(_, Option<u32>, &&str)> = state
             .iter()
@@ -413,10 +431,10 @@ mod tests {
         let inbox = state.insert(());
         assert!(!state.get(inbox).unwrap().tracked().active);
 
-        state.process_supervisor_update(
-            inbox,
-            &SupervisorEvent::<core::convert::Infallible, ()>::Started,
-        );
+        state
+            .process_update(inbox)
+            .unwrap()
+            .supervisor(&SupervisorEvent::<core::convert::Infallible, ()>::Started);
         assert!(state.get(inbox).unwrap().tracked().active);
     }
 
@@ -425,19 +443,19 @@ mod tests {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let inbox = state.insert(());
 
-        state.process_supervisor_update(
-            inbox,
-            &SupervisorEvent::<core::convert::Infallible, ()>::Started,
-        );
+        state
+            .process_update(inbox)
+            .unwrap()
+            .supervisor(&SupervisorEvent::<core::convert::Infallible, ()>::Started);
         assert!(state.get(inbox).unwrap().tracked().active);
 
-        state.process_supervisor_update(
-            inbox,
-            &SupervisorEvent::<core::convert::Infallible, ()>::Error {
+        state
+            .process_update(inbox)
+            .unwrap()
+            .supervisor(&SupervisorEvent::<core::convert::Infallible, ()>::Error {
                 error: (),
                 next_retry_in: std::time::Duration::ZERO,
-            },
-        );
+            });
         assert!(!state.get(inbox).unwrap().tracked().active);
     }
 }

@@ -84,15 +84,19 @@ async fn main() -> color_eyre::eyre::Result<()> {
                 }
             }
             Some(update) = mailbox_receiver.recv() => {
-                let effects = state.process_workload_update(update.entry, &update.payload);
-                if effects.new_mail {
-                    tracing::info!("new mail detected");
+                if let Some(mut proc) = state.process_update(update.entry) {
+                    let effects = proc.workload(&update.payload);
+                    if effects.new_mail {
+                        tracing::info!("new mail detected");
+                    }
                 }
 
                 tui_view::render(&mut terminal, entry_views(&state))?;
             }
             Some(update) = supervisor_receiver.recv() => {
-                state.process_supervisor_update(update.entry, &update.payload);
+                if let Some(mut proc) = state.process_update(update.entry) {
+                    proc.supervisor(&update.payload);
+                }
 
                 tui_view::render(&mut terminal, entry_views(&state))?;
             }
