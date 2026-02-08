@@ -2569,6 +2569,7 @@ version = "0.1.0"
 dependencies = [
  "async-imap",
  "imap-utf7",
+ "mail-state-machine-core",
  "thiserror 2.0.18",
  "tokio",
 ]
@@ -3065,6 +3066,19 @@ dependencies = [
  "nix",
  "winapi",
 ]
+
+[[package]]
+name = "mail-state-machine"
+version = "0.1.0"
+dependencies = [
+ "mail-state-machine-core",
+ "slotmap",
+ "supervisor",
+]
+
+[[package]]
+name = "mail-state-machine-core"
+version = "0.1.0"
 
 [[package]]
 name = "matchit"
@@ -5733,10 +5747,10 @@ dependencies = [
  "config-bringup",
  "config-load",
  "icon-render-loop",
+ "mail-state-machine",
  "monitoring-engine",
  "monitoring-workload-imap",
  "slotmap",
- "supervisor",
  "tao",
  "tokio",
  "tracing",
@@ -5789,11 +5803,11 @@ dependencies = [
  "config-bringup",
  "config-load",
  "crossterm",
+ "mail-state-machine",
  "monitoring-engine",
  "monitoring-workload-imap",
  "ratatui",
  "slotmap",
- "supervisor",
  "tokio",
  "tracing",
  "tracing-subscriber",

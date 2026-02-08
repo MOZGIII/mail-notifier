@@ -1,6 +1,5 @@
 //! Menu module.
 
-use slotmap::SlotMap;
 use tray_icon::menu::{Menu, MenuItem};
 
 /// State of a mailbox entry in the tray menu.
@@ -9,26 +8,21 @@ pub struct EntryState {
     /// Name of the mailbox.
     pub name: String,
 
-    /// Whether the mailbox is active.
-    pub active: bool,
-
-    /// Number of unread emails.
-    pub unread: u32,
-
     /// The URL to open when user wants to view this mailbox.
     pub view_url: Option<std::sync::Arc<str>>,
 }
 
-/// Build the tray menu from the current entries.
-pub fn build_menu(entries: &SlotMap<crate::Key, EntryState>) -> Menu {
+/// Build the tray menu from the current state.
+pub fn build_menu(state: &mail_state_machine::State<crate::Key, EntryState>) -> Menu {
     let menu = Menu::new();
-    for (key, entry) in entries.iter() {
-        let text = if entry.active {
-            format!("{}: {} unread", entry.name, entry.unread)
+    for (key, entry) in state.entries().iter() {
+        let unread = entry.tracked().unread.unwrap_or(0);
+        let text = if entry.tracked().active {
+            format!("{}: {unread} unread", entry.user_data.name)
         } else {
-            format!("{}: {} unread (inactive)", entry.name, entry.unread)
+            format!("{}: {unread} unread (inactive)", entry.user_data.name)
         };
-        let enabled = entry.view_url.is_some();
+        let enabled = entry.user_data.view_url.is_some();
         menu.append(&MenuItem::with_id(key, text, enabled, None))
             .unwrap();
     }

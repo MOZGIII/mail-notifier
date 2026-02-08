@@ -1,0 +1,10 @@
+[package]
+name = "mail-state-machine"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+mail-state-machine-core = { workspace = true }
+slotmap = { workspace = true }
+supervisor = { workspace = true }
