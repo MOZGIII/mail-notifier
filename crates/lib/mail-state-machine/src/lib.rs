@@ -421,8 +421,8 @@ mod tests {
             .map(|(k, e)| (k, e.tracked().unread, &e.user_data))
             .collect();
         assert_eq!(items.len(), 2);
-        assert!(items.contains(&(a, Some(3), &&"a")));
-        assert!(items.contains(&(b, Some(7), &&"b")));
+        assert!(items.contains(&(a, Some(3), &"a")));
+        assert!(items.contains(&(b, Some(7), &"b")));
     }
 
     #[test]
