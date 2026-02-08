@@ -112,7 +112,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
     }));
 
     let mut tray_icon = None;
-    let mut total_cache = None;
+    let mut mail_state = mail_state_machine::State::<Key>::new();
 
     tokio::task::block_in_place(move || {
         event_loop.run(move |event, _, control_flow| {
@@ -129,22 +129,36 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                             .build()
                             .unwrap(),
                     );
-                    update_total(&entries, &mut total_cache, new_icon_text_sender.clone());
+                    let _ =
+                        new_icon_text_sender.blocking_send(mail_state.total_unread().to_string());
                 }
                 tao::event::Event::UserEvent(UserEvent::WorkloadUpdate(update)) => {
                     if let Some(entry) = entries.get_mut(update.entry) {
                         entry.unread = update.payload.unread;
                     }
+                    let effects =
+                        mail_state.process_unread_update(update.entry, update.payload.unread);
+                    if effects.new_mail {
+                        tracing::info!("new mail detected");
+                    }
+                    if let Some(total) = effects.total_unread_changed {
+                        let _ = new_icon_text_sender.blocking_send(total.to_string());
+                    }
                     update_tray_menu(&mut tray_icon, &entries);
-                    update_total(&entries, &mut total_cache, new_icon_text_sender.clone());
                 }
                 tao::event::Event::UserEvent(UserEvent::SupervisorUpdate(update)) => {
                     if let Some(entry) = entries.get_mut(update.entry) {
                         entry.active =
                             matches!(update.payload, supervisor::SupervisorEvent::Started);
                     }
+                    if matches!(
+                        update.payload,
+                        supervisor::SupervisorEvent::Error { .. }
+                            | supervisor::SupervisorEvent::Panicked { .. }
+                    ) {
+                        mail_state.reset_entry(&update.entry);
+                    }
                     update_tray_menu(&mut tray_icon, &entries);
-                    update_total(&entries, &mut total_cache, new_icon_text_sender.clone());
                 }
                 tao::event::Event::UserEvent(UserEvent::NewIcon(icon)) => {
                     update_tray_icon(&mut tray_icon, icon)
@@ -209,22 +223,6 @@ fn update_tray_menu(
 
     let menu = menu::build_menu(entries);
     tray_icon.set_menu(Some(Box::new(menu)));
-}
-
-/// Update the total number.
-fn update_total(
-    entries: &slotmap::SlotMap<Key, menu::EntryState>,
-    total_cache: &mut Option<u32>,
-    new_icon_image_requester: tokio::sync::mpsc::Sender<String>,
-) {
-    let total = entries.values().map(|state| state.unread).sum();
-
-    let should_redraw = total_cache.map(|cache| cache != total).unwrap_or(true);
-
-    if should_redraw {
-        *total_cache = Some(total);
-        let _ = new_icon_image_requester.blocking_send(total.to_string());
-    }
 }
 
 /// Update the tray icon's actual icon.

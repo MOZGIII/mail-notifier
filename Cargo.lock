@@ -5737,6 +5737,7 @@ dependencies = [
  "config-bringup",
  "config-load",
  "icon-render-loop",
+ "mail-state-machine",
  "monitoring-engine",
  "monitoring-workload-imap",
  "slotmap",
