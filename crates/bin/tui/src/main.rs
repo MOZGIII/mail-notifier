@@ -19,6 +19,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
 
     let mut entries: slotmap::SlotMap<slotmap::DefaultKey, tui_view::EntryState> =
         slotmap::SlotMap::with_key();
+    let mut mail_state = mail_state_machine::State::<slotmap::DefaultKey>::new();
 
     let register_state = |config: &Arc<config_bringup::Mailbox>| {
         let label = format!("{} / {}", config.server.server_name, config.mailbox);
@@ -85,12 +86,23 @@ async fn main() -> color_eyre::eyre::Result<()> {
                 if let Some(entry) = entries.get_mut(update.entry) {
                     entry.unread = update.payload.unread;
                 }
+                let effects = mail_state.process_unread_update(update.entry, update.payload.unread);
+                if effects.new_mail {
+                    tracing::info!("new mail detected");
+                }
 
                 tui_view::render(&mut terminal, entries.values())?;
             }
             Some(update) = supervisor_receiver.recv() => {
                 if let Some(entry) = entries.get_mut(update.entry) {
                     entry.active = matches!(update.payload, supervisor::SupervisorEvent::Started);
+                }
+                if matches!(
+                    update.payload,
+                    supervisor::SupervisorEvent::Error { .. }
+                        | supervisor::SupervisorEvent::Panicked { .. }
+                ) {
+                    mail_state.reset_entry(&update.entry);
                 }
 
                 tui_view::render(&mut terminal, entries.values())?;

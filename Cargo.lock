@@ -5794,6 +5794,7 @@ dependencies = [
  "config-bringup",
  "config-load",
  "crossterm",
+ "mail-state-machine",
  "monitoring-engine",
  "monitoring-workload-imap",
  "ratatui",

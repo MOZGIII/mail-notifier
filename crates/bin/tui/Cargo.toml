@@ -9,6 +9,7 @@ color-eyre = { workspace = true }
 config-bringup = { workspace = true }
 config-load = { workspace = true }
 crossterm = { workspace = true }
+mail-state-machine = { workspace = true }
 monitoring-engine = { workspace = true }
 monitoring-workload-imap = { workspace = true }
 ratatui = { workspace = true }
