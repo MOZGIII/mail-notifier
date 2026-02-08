@@ -16,7 +16,7 @@ pub struct EntryState {
 pub fn build_menu(state: &mail_state_machine::State<crate::Key, EntryState>) -> Menu {
     let menu = Menu::new();
     for (key, entry) in state.iter() {
-        let unread = entry.tracked().unread;
+        let unread = entry.tracked().unread.unwrap_or(0);
         let text = if entry.tracked().active {
             format!("{}: {unread} unread", entry.user_data.name)
         } else {

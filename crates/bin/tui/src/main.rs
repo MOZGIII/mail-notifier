@@ -120,6 +120,6 @@ fn entry_views(
     state.iter().map(|(_key, entry)| tui_view::EntryView {
         name: &entry.user_data.name,
         active: entry.tracked().active,
-        unread: entry.tracked().unread,
+        unread: entry.tracked().unread.unwrap_or(0),
     })
 }

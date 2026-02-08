@@ -32,18 +32,12 @@ pub struct Effects {
 /// read access, but the state machine controls mutation internally.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Tracked {
-    /// Last known unread count.
-    pub unread: u32,
+    /// Last known unread count, or [`None`] if no update has been
+    /// received yet (no baseline established).
+    pub unread: Option<u32>,
 
     /// Whether the mailbox monitor is currently active (connected).
     pub active: bool,
-
-    /// Whether the baseline has been established.
-    ///
-    /// When `false`, the next
-    /// [`process_unread_update`](State::process_unread_update) call will
-    /// set the baseline without emitting [`Effects::new_mail`].
-    pub has_baseline: bool,
 }
 
 /// Combined entry: caller-supplied user data plus tracking state.
@@ -103,16 +97,15 @@ impl<K: Key, UserData> State<K, UserData> {
     /// Register a new mailbox entry with the given user data and return
     /// its key.
     ///
-    /// The entry starts with zero unread and no baseline — the first
+    /// The entry starts with no unread count — the first
     /// [`process_unread_update`](Self::process_unread_update) call will
     /// establish the baseline without emitting [`Effects::new_mail`].
     pub fn insert(&mut self, user_data: UserData) -> K {
         self.entries.insert(Entry {
             user_data,
             tracked: Tracked {
-                unread: 0,
+                unread: None,
                 active: false,
-                has_baseline: false,
             },
         })
     }
@@ -134,13 +127,14 @@ impl<K: Key, UserData> State<K, UserData> {
         let mut new_mail = false;
 
         if let Some(state) = self.entries.get_mut(entry) {
-            let prev = state.tracked.unread;
+            let prev = state.tracked.unread.unwrap_or(0);
             self.total_unread = self.total_unread - prev + unread;
-            if state.tracked.has_baseline && unread > prev {
+            if let Some(old) = state.tracked.unread
+                && unread > old
+            {
                 new_mail = true;
             }
-            state.tracked.unread = unread;
-            state.tracked.has_baseline = true;
+            state.tracked.unread = Some(unread);
         }
 
         let total_unread_changed = if self.total_unread != old_total {
@@ -306,10 +300,10 @@ mod tests {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let inbox = state.insert(());
         // Freshly inserted — no updates yet.
-        assert_eq!(state.get(inbox).map(|e| e.tracked().unread), Some(0));
+        assert_eq!(state.get(inbox).map(|e| e.tracked().unread), Some(None));
 
         state.process_unread_update(inbox, 5);
-        assert_eq!(state.get(inbox).map(|e| e.tracked().unread), Some(5));
+        assert_eq!(state.get(inbox).map(|e| e.tracked().unread), Some(Some(5)));
     }
 
     #[test]
@@ -385,13 +379,13 @@ mod tests {
         state.process_unread_update(a, 3);
         state.process_unread_update(b, 7);
 
-        let items: Vec<(_, u32, &&str)> = state
+        let items: Vec<(_, Option<u32>, &&str)> = state
             .iter()
             .map(|(k, e)| (k, e.tracked().unread, &e.user_data))
             .collect();
         assert_eq!(items.len(), 2);
-        assert!(items.contains(&(a, 3, &&"a")));
-        assert!(items.contains(&(b, 7, &&"b")));
+        assert!(items.contains(&(a, Some(3), &&"a")));
+        assert!(items.contains(&(b, Some(7), &&"b")));
     }
 
     #[test]
