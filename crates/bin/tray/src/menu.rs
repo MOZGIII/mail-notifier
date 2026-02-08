@@ -12,21 +12,22 @@ pub struct EntryState {
     /// Whether the mailbox is active.
     pub active: bool,
 
-    /// Number of unread emails.
-    pub unread: u32,
-
     /// The URL to open when user wants to view this mailbox.
     pub view_url: Option<std::sync::Arc<str>>,
 }
 
 /// Build the tray menu from the current entries.
-pub fn build_menu(entries: &SlotMap<crate::Key, EntryState>) -> Menu {
+pub fn build_menu(
+    entries: &SlotMap<crate::Key, EntryState>,
+    mail_state: &mail_state_machine::State<crate::Key>,
+) -> Menu {
     let menu = Menu::new();
     for (key, entry) in entries.iter() {
+        let unread = mail_state.unread_for(&key).unwrap_or(0);
         let text = if entry.active {
-            format!("{}: {} unread", entry.name, entry.unread)
+            format!("{}: {unread} unread", entry.name)
         } else {
-            format!("{}: {} unread (inactive)", entry.name, entry.unread)
+            format!("{}: {unread} unread (inactive)", entry.name)
         };
         let enabled = entry.view_url.is_some();
         menu.append(&MenuItem::with_id(key, text, enabled, None))

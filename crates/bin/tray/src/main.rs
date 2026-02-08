@@ -29,7 +29,6 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
         entries.insert(menu::EntryState {
             name: label,
             active: false,
-            unread: 0,
             view_url: config.view_url.clone(),
         })
     };
@@ -121,7 +120,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
             match event {
                 tao::event::Event::NewEvents(tao::event::StartCause::Init) => {
                     let icon = icon::from_render_loop_data(icon::idle()).unwrap();
-                    let menu = menu::build_menu(&entries);
+                    let menu = menu::build_menu(&entries, &mail_state);
                     tray_icon = Some(
                         TrayIconBuilder::new()
                             .with_menu(Box::new(menu))
@@ -133,9 +132,6 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                         new_icon_text_sender.blocking_send(mail_state.total_unread().to_string());
                 }
                 tao::event::Event::UserEvent(UserEvent::WorkloadUpdate(update)) => {
-                    if let Some(entry) = entries.get_mut(update.entry) {
-                        entry.unread = update.payload.unread;
-                    }
                     let effects =
                         mail_state.process_unread_update(update.entry, update.payload.unread);
                     if effects.new_mail {
@@ -144,7 +140,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                     if let Some(total) = effects.total_unread_changed {
                         let _ = new_icon_text_sender.blocking_send(total.to_string());
                     }
-                    update_tray_menu(&mut tray_icon, &entries);
+                    update_tray_menu(&mut tray_icon, &entries, &mail_state);
                 }
                 tao::event::Event::UserEvent(UserEvent::SupervisorUpdate(update)) => {
                     if let Some(entry) = entries.get_mut(update.entry) {
@@ -158,7 +154,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                     ) {
                         mail_state.reset_entry(&update.entry);
                     }
-                    update_tray_menu(&mut tray_icon, &entries);
+                    update_tray_menu(&mut tray_icon, &entries, &mail_state);
                 }
                 tao::event::Event::UserEvent(UserEvent::NewIcon(icon)) => {
                     update_tray_icon(&mut tray_icon, icon)
@@ -216,12 +212,13 @@ enum UserEvent {
 fn update_tray_menu(
     tray_icon: &mut Option<TrayIcon>,
     entries: &slotmap::SlotMap<Key, menu::EntryState>,
+    mail_state: &mail_state_machine::State<Key>,
 ) {
     let Some(tray_icon) = tray_icon else {
         return;
     };
 
-    let menu = menu::build_menu(entries);
+    let menu = menu::build_menu(entries, mail_state);
     tray_icon.set_menu(Some(Box::new(menu)));
 }
 

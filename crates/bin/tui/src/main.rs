@@ -2,6 +2,16 @@
 
 use std::sync::Arc;
 
+/// Local UI state for a mailbox entry stored in the slot-map.
+#[derive(Debug, Clone)]
+struct EntryState {
+    /// Display name for the mailbox.
+    name: String,
+
+    /// Whether the mailbox is active or not.
+    active: bool,
+}
+
 #[tokio::main]
 async fn main() -> color_eyre::eyre::Result<()> {
     color_eyre::install()?;
@@ -17,16 +27,15 @@ async fn main() -> color_eyre::eyre::Result<()> {
     let (mailbox_sender, mut mailbox_receiver) = tokio::sync::mpsc::channel(128);
     let (supervisor_sender, mut supervisor_receiver) = tokio::sync::mpsc::channel(128);
 
-    let mut entries: slotmap::SlotMap<slotmap::DefaultKey, tui_view::EntryState> =
+    let mut entries: slotmap::SlotMap<slotmap::DefaultKey, EntryState> =
         slotmap::SlotMap::with_key();
     let mut mail_state = mail_state_machine::State::<slotmap::DefaultKey>::new();
 
     let register_state = |config: &Arc<config_bringup::Mailbox>| {
         let label = format!("{} / {}", config.server.server_name, config.mailbox);
-        entries.insert(tui_view::EntryState {
+        entries.insert(EntryState {
             name: label,
             active: false,
-            unread: 0,
         })
     };
 
@@ -66,7 +75,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
         }
     });
 
-    tui_view::render(&mut terminal, entries.values())?;
+    tui_view::render(&mut terminal, entry_views(&entries, &mail_state))?;
 
     loop {
         tokio::select! {
@@ -77,21 +86,18 @@ async fn main() -> color_eyre::eyre::Result<()> {
                         break;
                     }
                     crossterm::event::Event::Resize(_, _) => {
-                        tui_view::render(&mut terminal, entries.values())?;
+                        tui_view::render(&mut terminal, entry_views(&entries, &mail_state))?;
                     }
                     _ => {}
                 }
             }
             Some(update) = mailbox_receiver.recv() => {
-                if let Some(entry) = entries.get_mut(update.entry) {
-                    entry.unread = update.payload.unread;
-                }
                 let effects = mail_state.process_unread_update(update.entry, update.payload.unread);
                 if effects.new_mail {
                     tracing::info!("new mail detected");
                 }
 
-                tui_view::render(&mut terminal, entries.values())?;
+                tui_view::render(&mut terminal, entry_views(&entries, &mail_state))?;
             }
             Some(update) = supervisor_receiver.recv() => {
                 if let Some(entry) = entries.get_mut(update.entry) {
@@ -105,7 +111,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
                     mail_state.reset_entry(&update.entry);
                 }
 
-                tui_view::render(&mut terminal, entries.values())?;
+                tui_view::render(&mut terminal, entry_views(&entries, &mail_state))?;
             }
             Some(result) = join_set.join_next() => {
                 result.unwrap();
@@ -119,4 +125,17 @@ async fn main() -> color_eyre::eyre::Result<()> {
     tracing::info!(message = "Exiting...");
 
     Ok(())
+}
+
+/// Build [`tui_view::EntryView`] items by combining the slot-map entries
+/// with the unread counts tracked by the state machine.
+fn entry_views<'a>(
+    entries: &'a slotmap::SlotMap<slotmap::DefaultKey, EntryState>,
+    mail_state: &'a mail_state_machine::State<slotmap::DefaultKey>,
+) -> impl Iterator<Item = tui_view::EntryView<'a>> {
+    entries.iter().map(move |(key, entry)| tui_view::EntryView {
+        name: &entry.name,
+        active: entry.active,
+        unread: mail_state.unread_for(&key).unwrap_or(0),
+    })
 }

@@ -4,11 +4,11 @@ use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph};
 
-/// UI state for a mailbox entry.
-#[derive(Debug, Clone)]
-pub struct EntryState {
+/// Snapshot of a mailbox entry for rendering.
+#[derive(Debug, Clone, Copy)]
+pub struct EntryView<'a> {
     /// Display name for the mailbox.
-    pub name: String,
+    pub name: &'a str,
 
     /// Unread message count.
     pub unread: u32,
@@ -21,9 +21,9 @@ pub struct EntryState {
 pub fn render<'a, B, I>(terminal: &mut ratatui::Terminal<B>, entries: I) -> Result<(), B::Error>
 where
     B: ratatui::backend::Backend,
-    I: IntoIterator<Item = &'a EntryState>,
+    I: IntoIterator<Item = EntryView<'a>>,
 {
-    let entries: Vec<&EntryState> = entries.into_iter().collect();
+    let entries: Vec<EntryView<'a>> = entries.into_iter().collect();
     terminal.draw(|frame| {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
