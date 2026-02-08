@@ -185,22 +185,15 @@ impl<UserData> UpdateProcessor<'_, UserData> {
     pub fn workload(&mut self, payload: &impl HasUnread) -> WorkloadEffects {
         let unread = payload.unread();
         let old_total = self.totals.unread;
-        let mut new_mail = false;
+        let prev_unread = self.entry.tracked.unread;
 
-        let prev = self.entry.tracked.unread.unwrap_or(0);
-        self.totals.unread = self.totals.unread - prev + unread;
-        if let Some(old) = self.entry.tracked.unread
-            && unread > old
-        {
-            new_mail = true;
-        }
         self.entry.tracked.unread = Some(unread);
+        self.totals.unread = old_total
+            .saturating_sub(prev_unread.unwrap_or(0))
+            .saturating_add(unread);
 
-        let total_unread_changed = if self.totals.unread != old_total {
-            Some(self.totals.unread)
-        } else {
-            None
-        };
+        let new_mail = prev_unread.is_some_and(|old| unread > old);
+        let total_unread_changed = (self.totals.unread != old_total).then_some(self.totals.unread);
 
         WorkloadEffects {
             new_mail,
