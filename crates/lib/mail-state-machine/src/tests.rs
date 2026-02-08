@@ -237,3 +237,72 @@ fn process_supervisor_error_clears_active() {
         });
     assert!(!state.get(inbox).unwrap().tracked().active);
 }
+
+#[test]
+fn process_supervisor_done_clears_active() {
+    let mut state = State::<slotmap::DefaultKey, ()>::new();
+    let inbox = state.insert(());
+
+    state
+        .process_update(inbox)
+        .unwrap()
+        .supervisor(&SupervisorEvent::<(), ()>::Started);
+    assert!(state.get(inbox).unwrap().tracked().active);
+
+    state
+        .process_update(inbox)
+        .unwrap()
+        .supervisor(&SupervisorEvent::<(), ()>::Done { value: () });
+    assert!(!state.get(inbox).unwrap().tracked().active);
+}
+
+#[test]
+fn process_supervisor_panicked_clears_active() {
+    let mut state = State::<slotmap::DefaultKey, ()>::new();
+    let inbox = state.insert(());
+
+    state
+        .process_update(inbox)
+        .unwrap()
+        .supervisor(&SupervisorEvent::<(), ()>::Started);
+    assert!(state.get(inbox).unwrap().tracked().active);
+
+    state
+        .process_update(inbox)
+        .unwrap()
+        .supervisor(&SupervisorEvent::<(), ()>::Panicked {
+            panic_payload: Box::new("oops"),
+            next_retry_in: std::time::Duration::ZERO,
+        });
+    assert!(!state.get(inbox).unwrap().tracked().active);
+}
+
+#[test]
+fn process_update_unknown_key_returns_none() {
+    let mut state = State::<slotmap::DefaultKey, ()>::new();
+    assert!(
+        state
+            .process_update(slotmap::DefaultKey::default())
+            .is_none()
+    );
+}
+
+#[test]
+fn get_unknown_key_returns_none() {
+    let state = State::<slotmap::DefaultKey, ()>::new();
+    assert!(state.get(slotmap::DefaultKey::default()).is_none());
+}
+
+#[test]
+fn get_mut_unknown_key_returns_none() {
+    let mut state = State::<slotmap::DefaultKey, ()>::new();
+    assert!(state.get_mut(slotmap::DefaultKey::default()).is_none());
+}
+
+#[test]
+fn empty_state_defaults() {
+    let state = State::<slotmap::DefaultKey, ()>::new();
+    assert_eq!(state.total_unread(), 0);
+    assert_eq!(state.entry_count(), 0);
+    assert_eq!(state.iter().count(), 0);
+}
