@@ -10,8 +10,8 @@ pub struct EntryView<'a> {
     /// Display name for the mailbox.
     pub name: &'a str,
 
-    /// Unread message count.
-    pub unread: u32,
+    /// Unread message count, or [`None`] if no data has been received yet.
+    pub unread: Option<u32>,
 
     /// Whether the mailbox is active or not.
     pub active: bool,
@@ -41,7 +41,8 @@ where
             entries
                 .iter()
                 .map(|entry| {
-                    ListItem::new(format!("{} — {} new", entry.name, entry.unread)).style({
+                    let count = entry.unread.unwrap_or(0);
+                    ListItem::new(format!("{} — {} new", entry.name, count)).style({
                         let mut s = Style::new();
                         if !entry.active {
                             s = s.italic();
