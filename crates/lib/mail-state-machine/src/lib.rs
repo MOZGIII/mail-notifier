@@ -52,6 +52,7 @@ pub struct Tracked {
 pub struct Entry<UserData> {
     /// Caller-supplied user data.
     pub user_data: UserData,
+
     /// Tracking state (read-only to callers).
     tracked: Tracked,
 }
@@ -77,6 +78,7 @@ impl<UserData> Entry<UserData> {
 pub struct State<K: Key, UserData> {
     /// Tracked entries.
     entries: SlotMap<K, Entry<UserData>>,
+
     /// Cached total unread count across all tracked entries.
     total_unread: u32,
 }
@@ -158,6 +160,7 @@ impl<K: Key, UserData> State<K, UserData> {
 pub struct UpdateProcessor<'a, UserData> {
     /// The entry being updated.
     entry: &'a mut Entry<UserData>,
+
     /// Shared total-unread counter.
     total_unread: &'a mut u32,
 }
