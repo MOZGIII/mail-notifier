@@ -17,7 +17,7 @@ pub use mail_state_machine_core::HasUnread;
 ///
 /// Returned by [`UpdateProcessor::workload`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Effects {
+pub struct WorkloadEffects {
     /// Whether new mail was detected — the unread count for this specific
     /// mailbox increased compared to the previous known value.
     pub new_mail: bool,
@@ -103,7 +103,7 @@ impl<K: Key, UserData> State<K, UserData> {
     ///
     /// The entry starts with no unread count — the first workload
     /// update via [`UpdateProcessor::workload`] will establish the
-    /// baseline without emitting [`Effects::new_mail`].
+    /// baseline without emitting [`WorkloadEffects::new_mail`].
     pub fn insert(&mut self, user_data: UserData) -> K {
         self.entries.insert(Entry {
             user_data,
@@ -166,16 +166,16 @@ pub struct UpdateProcessor<'a, UserData> {
 }
 
 impl<UserData> UpdateProcessor<'_, UserData> {
-    /// Apply a workload update, returning the resulting [`Effects`].
+    /// Apply a workload update, returning the resulting [`WorkloadEffects`].
     ///
-    /// - [`new_mail`](Effects::new_mail) is `true` when the new `unread`
+    /// - [`new_mail`](WorkloadEffects::new_mail) is `true` when the new `unread`
     ///   count is strictly greater than the previously recorded count
     ///   **and** a baseline was already established.  The very first
     ///   update establishes a baseline and never sets `new_mail`.
     ///
-    /// - [`total_unread_changed`](Effects::total_unread_changed) is
+    /// - [`total_unread_changed`](WorkloadEffects::total_unread_changed) is
     ///   [`Some(new_total)`] when the global total changed.
-    pub fn workload(&mut self, payload: &impl HasUnread) -> Effects {
+    pub fn workload(&mut self, payload: &impl HasUnread) -> WorkloadEffects {
         let unread = payload.unread();
         let old_total = *self.total_unread;
         let mut new_mail = false;
@@ -195,7 +195,7 @@ impl<UserData> UpdateProcessor<'_, UserData> {
             None
         };
 
-        Effects {
+        WorkloadEffects {
             new_mail,
             total_unread_changed,
         }
