@@ -7,9 +7,6 @@ use std::sync::Arc;
 struct EntryState {
     /// Display name for the mailbox.
     name: String,
-
-    /// Whether the mailbox is active or not.
-    active: bool,
 }
 
 #[tokio::main]
@@ -31,10 +28,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
 
     let register_state = |config: &Arc<config_bringup::Mailbox>| {
         let label = format!("{} / {}", config.server.server_name, config.mailbox);
-        state.insert(EntryState {
-            name: label,
-            active: false,
-        })
+        state.insert(EntryState { name: label })
     };
 
     monitoring_engine::spawn_monitors::<monitoring_workload_imap::Mailbox, _, _, _, _, _, _>(
@@ -98,9 +92,10 @@ async fn main() -> color_eyre::eyre::Result<()> {
                 tui_view::render(&mut terminal, entry_views(&state))?;
             }
             Some(update) = supervisor_receiver.recv() => {
-                if let Some(entry) = state.get_mut(update.entry) {
-                    entry.user_data.active = matches!(update.payload, supervisor::SupervisorEvent::Started);
-                }
+                state.set_active(
+                    update.entry,
+                    matches!(update.payload, supervisor::SupervisorEvent::Started),
+                );
                 if matches!(
                     update.payload,
                     supervisor::SupervisorEvent::Error { .. }
@@ -131,7 +126,7 @@ fn entry_views(
 ) -> impl Iterator<Item = tui_view::EntryView<'_>> {
     state.iter().map(|(_key, entry)| tui_view::EntryView {
         name: &entry.user_data.name,
-        active: entry.user_data.active,
+        active: entry.tracked().active,
         unread: entry.tracked().unread,
     })
 }

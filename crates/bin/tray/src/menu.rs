@@ -8,9 +8,6 @@ pub struct EntryState {
     /// Name of the mailbox.
     pub name: String,
 
-    /// Whether the mailbox is active.
-    pub active: bool,
-
     /// The URL to open when user wants to view this mailbox.
     pub view_url: Option<std::sync::Arc<str>>,
 }
@@ -20,7 +17,7 @@ pub fn build_menu(state: &mail_state_machine::State<crate::Key, EntryState>) -> 
     let menu = Menu::new();
     for (key, entry) in state.iter() {
         let unread = entry.tracked().unread;
-        let text = if entry.user_data.active {
+        let text = if entry.tracked().active {
             format!("{}: {unread} unread", entry.user_data.name)
         } else {
             format!("{}: {unread} unread (inactive)", entry.user_data.name)

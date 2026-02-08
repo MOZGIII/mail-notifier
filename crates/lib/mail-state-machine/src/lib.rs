@@ -35,6 +35,9 @@ pub struct Tracked {
     /// Last known unread count.
     pub unread: u32,
 
+    /// Whether the mailbox monitor is currently active (connected).
+    pub active: bool,
+
     /// Whether the baseline has been established.
     ///
     /// When `false`, the next
@@ -108,6 +111,7 @@ impl<K: Key, UserData> State<K, UserData> {
             user_data,
             tracked: Tracked {
                 unread: 0,
+                active: false,
                 has_baseline: false,
             },
         })
@@ -164,6 +168,13 @@ impl<K: Key, UserData> State<K, UserData> {
     pub fn reset_entry(&mut self, entry: K) {
         if let Some(state) = self.entries.get_mut(entry) {
             state.tracked.has_baseline = false;
+        }
+    }
+
+    /// Set whether a mailbox monitor is currently active.
+    pub fn set_active(&mut self, entry: K, active: bool) {
+        if let Some(state) = self.entries.get_mut(entry) {
+            state.tracked.active = active;
         }
     }
 
@@ -427,5 +438,18 @@ mod tests {
         assert_eq!(items.len(), 2);
         assert!(items.contains(&(a, 3, &&"a")));
         assert!(items.contains(&(b, 7, &&"b")));
+    }
+
+    #[test]
+    fn set_active_updates_tracked_state() {
+        let mut state = State::<slotmap::DefaultKey, ()>::new();
+        let inbox = state.insert(());
+        assert!(!state.get(inbox).unwrap().tracked().active);
+
+        state.set_active(inbox, true);
+        assert!(state.get(inbox).unwrap().tracked().active);
+
+        state.set_active(inbox, false);
+        assert!(!state.get(inbox).unwrap().tracked().active);
     }
 }

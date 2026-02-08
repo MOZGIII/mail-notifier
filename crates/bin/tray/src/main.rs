@@ -28,7 +28,6 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
         let label = format!("{} / {}", config.server.server_name, config.mailbox);
         state.insert(menu::EntryState {
             name: label,
-            active: false,
             view_url: config.view_url.clone(),
         })
     };
@@ -140,10 +139,10 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                     update_tray_menu(&mut tray_icon, &state);
                 }
                 tao::event::Event::UserEvent(UserEvent::SupervisorUpdate(update)) => {
-                    if let Some(entry) = state.get_mut(update.entry) {
-                        entry.user_data.active =
-                            matches!(update.payload, supervisor::SupervisorEvent::Started);
-                    }
+                    state.set_active(
+                        update.entry,
+                        matches!(update.payload, supervisor::SupervisorEvent::Started),
+                    );
                     if matches!(
                         update.payload,
                         supervisor::SupervisorEvent::Error { .. }
