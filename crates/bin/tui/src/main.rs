@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-/// Local UI state for a mailbox entry stored in the slot-map.
+/// Local UI state for a mailbox entry.
 #[derive(Debug, Clone)]
 struct EntryState {
     /// Display name for the mailbox.
@@ -27,13 +27,11 @@ async fn main() -> color_eyre::eyre::Result<()> {
     let (mailbox_sender, mut mailbox_receiver) = tokio::sync::mpsc::channel(128);
     let (supervisor_sender, mut supervisor_receiver) = tokio::sync::mpsc::channel(128);
 
-    let mut entries: slotmap::SlotMap<slotmap::DefaultKey, EntryState> =
-        slotmap::SlotMap::with_key();
-    let mut mail_state = mail_state_machine::State::<slotmap::DefaultKey>::new();
+    let mut state = mail_state_machine::State::<slotmap::DefaultKey, EntryState>::new();
 
     let register_state = |config: &Arc<config_bringup::Mailbox>| {
         let label = format!("{} / {}", config.server.server_name, config.mailbox);
-        entries.insert(EntryState {
+        state.insert(EntryState {
             name: label,
             active: false,
         })
@@ -75,7 +73,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
         }
     });
 
-    tui_view::render(&mut terminal, entry_views(&entries, &mail_state))?;
+    tui_view::render(&mut terminal, entry_views(&state))?;
 
     loop {
         tokio::select! {
@@ -86,32 +84,32 @@ async fn main() -> color_eyre::eyre::Result<()> {
                         break;
                     }
                     crossterm::event::Event::Resize(_, _) => {
-                        tui_view::render(&mut terminal, entry_views(&entries, &mail_state))?;
+                        tui_view::render(&mut terminal, entry_views(&state))?;
                     }
                     _ => {}
                 }
             }
             Some(update) = mailbox_receiver.recv() => {
-                let effects = mail_state.process_unread_update(update.entry, update.payload.unread);
+                let effects = state.process_unread_update(update.entry, update.payload.unread);
                 if effects.new_mail {
                     tracing::info!("new mail detected");
                 }
 
-                tui_view::render(&mut terminal, entry_views(&entries, &mail_state))?;
+                tui_view::render(&mut terminal, entry_views(&state))?;
             }
             Some(update) = supervisor_receiver.recv() => {
-                if let Some(entry) = entries.get_mut(update.entry) {
-                    entry.active = matches!(update.payload, supervisor::SupervisorEvent::Started);
+                if let Some(entry) = state.get_mut(update.entry) {
+                    entry.user_data.active = matches!(update.payload, supervisor::SupervisorEvent::Started);
                 }
                 if matches!(
                     update.payload,
                     supervisor::SupervisorEvent::Error { .. }
                         | supervisor::SupervisorEvent::Panicked { .. }
                 ) {
-                    mail_state.reset_entry(update.entry);
+                    state.reset_entry(update.entry);
                 }
 
-                tui_view::render(&mut terminal, entry_views(&entries, &mail_state))?;
+                tui_view::render(&mut terminal, entry_views(&state))?;
             }
             Some(result) = join_set.join_next() => {
                 result.unwrap();
@@ -127,15 +125,13 @@ async fn main() -> color_eyre::eyre::Result<()> {
     Ok(())
 }
 
-/// Build [`tui_view::EntryView`] items by combining the slot-map entries
-/// with the unread counts tracked by the state machine.
-fn entry_views<'a>(
-    entries: &'a slotmap::SlotMap<slotmap::DefaultKey, EntryState>,
-    mail_state: &'a mail_state_machine::State<slotmap::DefaultKey>,
-) -> impl Iterator<Item = tui_view::EntryView<'a>> {
-    entries.iter().map(move |(key, entry)| tui_view::EntryView {
-        name: &entry.name,
-        active: entry.active,
-        unread: mail_state.unread_for(key).unwrap_or(0),
+/// Build [`tui_view::EntryView`] items from the unified state.
+fn entry_views(
+    state: &mail_state_machine::State<slotmap::DefaultKey, EntryState>,
+) -> impl Iterator<Item = tui_view::EntryView<'_>> {
+    state.iter().map(|(_key, entry)| tui_view::EntryView {
+        name: &entry.user_data.name,
+        active: entry.user_data.active,
+        unread: entry.tracked().unread,
     })
 }
