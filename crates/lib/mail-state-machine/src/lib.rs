@@ -1,12 +1,7 @@
-//! Event deducer.
+//! Mail state machine.
 //!
-//! A state machine that tracks per-mailbox unread counts and deduces
-//! when to emit events such as "new mail" based on count changes.
-//!
-//! [`State`] owns the primary [`slotmap::SlotMap`] for entry keys and
-//! stores caller-supplied values alongside the internal tracking state.
-//! App-level data goes in via the `UserData` type parameter — no secondary
-//! map needed, so keys are always valid by construction.
+//! Tracks per-mailbox unread counts and deduces events such as
+//! "new mail" based on count changes.
 
 use slotmap::{Key, SlotMap};
 use supervisor::SupervisorEvent;
@@ -14,66 +9,44 @@ use supervisor::SupervisorEvent;
 pub use mail_state_machine_core::HasUnread;
 
 /// The outcome of processing a workload update.
-///
-/// Returned by [`UpdateProcessor::workload`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WorkloadEffects {
-    /// Whether new mail was detected — the unread count for this specific
-    /// mailbox increased compared to the previous known value.
+    /// Whether new mail was detected — the unread count increased
+    /// compared to the previously known value.
     pub new_mail: bool,
 
-    /// The new total unread count across all tracked mailboxes, if it
-    /// changed as a result of this update.
-    ///
-    /// [`None`] when the total is unchanged.
+    /// The new total unread count, if it changed.
     pub total_unread_changed: Option<u32>,
 }
 
 /// Read-only tracking state for a single mailbox.
-///
-/// Obtained via [`Entry::tracked`].  All fields are public for direct
-/// read access, but the state machine controls mutation internally.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Tracked {
-    /// Last known unread count, or [`None`] if no update has been
-    /// received yet (no baseline established).
+    /// Last known unread count, or [`None`] before the first update.
     pub unread: Option<u32>,
 
-    /// Whether the mailbox monitor is currently active (connected).
+    /// Whether the mailbox monitor is currently active.
     pub active: bool,
 }
 
-/// Combined entry: caller-supplied user data plus tracking state.
-///
-/// The [`user_data`](Self::user_data) field is directly accessible; the
-/// tracking state is readable via [`tracked`](Self::tracked).  Internal
-/// fields are private so callers cannot corrupt the state machine.
+/// Caller-supplied user data plus tracking state.
 #[derive(Debug, Clone)]
 pub struct Entry<UserData> {
     /// Caller-supplied user data.
     pub user_data: UserData,
 
-    /// Tracking state (read-only to callers).
+    /// Tracking state.
     tracked: Tracked,
 }
 
 impl<UserData> Entry<UserData> {
-    /// Tracking state for this mailbox.
+    /// Returns the tracking state.
     pub fn tracked(&self) -> &Tracked {
         &self.tracked
     }
 }
 
-/// State machine that tracks per-mailbox unread counts and deduces events.
-///
-/// Owns a single [`SlotMap`] that stores both the caller-supplied data
-/// and the internal tracking state for each entry.  Because there is
-/// only one map, every key returned by [`insert`](Self::insert) is
-/// guaranteed to be valid for all methods — there is no secondary
-/// store that could fall out of sync.
-///
-/// Generic over the entry key `K` ([`slotmap::Key`]) and the
-/// app-level user data `UserData`.
+/// Tracks per-mailbox unread counts and deduces events.
 #[derive(Debug)]
 pub struct State<K: Key, UserData> {
     /// Tracked entries.
@@ -86,7 +59,7 @@ pub struct State<K: Key, UserData> {
 /// Aggregated counters across all tracked entries.
 #[derive(Debug, Default)]
 pub struct Totals {
-    /// Cached total unread count.
+    /// Total unread count.
     pub unread: u32,
 }
 
@@ -105,12 +78,7 @@ impl<K: Key, UserData> State<K, UserData> {
         Self::default()
     }
 
-    /// Register a new mailbox entry with the given user data and return
-    /// its key.
-    ///
-    /// The entry starts with no unread count — the first workload
-    /// update via [`UpdateProcessor::workload`] will establish the
-    /// baseline without emitting [`WorkloadEffects::new_mail`].
+    /// Register a new entry and return its key.
     pub fn insert(&mut self, user_data: UserData) -> K {
         self.entries.insert(Entry {
             user_data,
@@ -121,12 +89,9 @@ impl<K: Key, UserData> State<K, UserData> {
         })
     }
 
-    /// Begin processing an update for the entry identified by `key`.
+    /// Begin processing an update for the given entry.
     ///
-    /// Returns [`None`] when the key is not found.  The returned
-    /// [`UpdateProcessor`] exposes [`workload`](UpdateProcessor::workload)
-    /// and [`supervisor`](UpdateProcessor::supervisor) methods for
-    /// applying the actual update.
+    /// Returns [`None`] when the key is not found.
     pub fn process_update(&mut self, key: K) -> Option<UpdateProcessor<'_, UserData>> {
         let entry = self.entries.get_mut(key)?;
         Some(UpdateProcessor {
@@ -135,35 +100,23 @@ impl<K: Key, UserData> State<K, UserData> {
         })
     }
 
-    /// Total unread count across all tracked mailboxes.
+    /// Aggregated counters.
     pub fn totals(&self) -> &Totals {
         &self.totals
     }
 
     /// Read-only view of the tracked entries.
-    ///
-    /// Callers can use [`SlotMap::get`], [`SlotMap::iter`],
-    /// [`SlotMap::len`], etc. directly.  Mutation of the map itself
-    /// is not exposed — use [`get_entry_mut`](Self::get_entry_mut)
-    /// to modify an entry's [`user_data`](Entry::user_data).
     pub fn entries(&self) -> &SlotMap<K, Entry<UserData>> {
         &self.entries
     }
 
     /// Look up an entry by key, mutably.
-    ///
-    /// The caller may modify [`Entry::user_data`]; the tracking state
-    /// remains controlled by the state machine.
     pub fn get_entry_mut(&mut self, key: K) -> Option<&mut Entry<UserData>> {
         self.entries.get_mut(key)
     }
 }
 
 /// Handle for applying updates to a single entry.
-///
-/// Obtained via [`State::process_update`].  Borrows the state machine
-/// mutably for the duration, keeping the entry and global counters
-/// consistent.
 pub struct UpdateProcessor<'a, UserData> {
     /// The entry being updated.
     entry: &'a mut Entry<UserData>,
@@ -175,13 +128,8 @@ pub struct UpdateProcessor<'a, UserData> {
 impl<UserData> UpdateProcessor<'_, UserData> {
     /// Apply a workload update, returning the resulting [`WorkloadEffects`].
     ///
-    /// - [`new_mail`](WorkloadEffects::new_mail) is `true` when the new `unread`
-    ///   count is strictly greater than the previously recorded count
-    ///   **and** a baseline was already established.  The very first
-    ///   update establishes a baseline and never sets `new_mail`.
-    ///
-    /// - [`total_unread_changed`](WorkloadEffects::total_unread_changed) is
-    ///   [`Some(new_total)`] when the global total changed.
+    /// The very first update establishes a baseline and never
+    /// sets [`new_mail`](WorkloadEffects::new_mail).
     pub fn workload(&mut self, payload: &impl HasUnread) -> WorkloadEffects {
         let unread = payload.unread();
         let old_total = self.totals.unread;
@@ -202,9 +150,6 @@ impl<UserData> UpdateProcessor<'_, UserData> {
     }
 
     /// Apply a [`SupervisorEvent`], updating the entry's active state.
-    ///
-    /// [`SupervisorEvent::Started`] marks the entry as active; all other
-    /// variants mark it as inactive.
     pub fn supervisor<T, E>(&mut self, event: &SupervisorEvent<T, E>) {
         self.entry.tracked.active = matches!(event, SupervisorEvent::Started);
     }
