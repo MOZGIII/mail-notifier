@@ -96,13 +96,6 @@ async fn main() -> color_eyre::eyre::Result<()> {
                     update.entry,
                     matches!(update.payload, supervisor::SupervisorEvent::Started),
                 );
-                if matches!(
-                    update.payload,
-                    supervisor::SupervisorEvent::Error { .. }
-                        | supervisor::SupervisorEvent::Panicked { .. }
-                ) {
-                    state.reset_entry(update.entry);
-                }
 
                 tui_view::render(&mut terminal, entry_views(&state))?;
             }

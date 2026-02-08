@@ -143,13 +143,6 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                         update.entry,
                         matches!(update.payload, supervisor::SupervisorEvent::Started),
                     );
-                    if matches!(
-                        update.payload,
-                        supervisor::SupervisorEvent::Error { .. }
-                            | supervisor::SupervisorEvent::Panicked { .. }
-                    ) {
-                        state.reset_entry(update.entry);
-                    }
                     update_tray_menu(&mut tray_icon, &state);
                 }
                 tao::event::Event::UserEvent(UserEvent::NewIcon(icon)) => {

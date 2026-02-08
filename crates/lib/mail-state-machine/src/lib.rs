@@ -124,9 +124,8 @@ impl<K: Key, UserData> State<K, UserData> {
     /// - [`new_mail`](Effects::new_mail) is `true` when the new `unread`
     ///   count is strictly greater than the previously recorded count for
     ///   this entry **and** a baseline was already established. The very
-    ///   first update for an entry (or the first after
-    ///   [`reset_entry`](Self::reset_entry)) establishes a baseline and
-    ///   never sets `new_mail`.
+    ///   first update for an entry establishes a baseline and never sets
+    ///   `new_mail`.
     ///
     /// - [`total_unread_changed`](Effects::total_unread_changed) is
     ///   [`Some(new_total)`] when the global total changed.
@@ -153,21 +152,6 @@ impl<K: Key, UserData> State<K, UserData> {
         Effects {
             new_mail,
             total_unread_changed,
-        }
-    }
-
-    /// Reset the new-mail detection baseline for a mailbox entry.
-    ///
-    /// The next [`process_unread_update`](Self::process_unread_update)
-    /// call for this entry will establish a fresh baseline without
-    /// emitting [`Effects::new_mail`].
-    ///
-    /// The entry's unread count is preserved so that
-    /// [`total_unread`](Self::total_unread) remains stable — useful when
-    /// a connection drops and you don't want the icon badge to flicker.
-    pub fn reset_entry(&mut self, entry: K) {
-        if let Some(state) = self.entries.get_mut(entry) {
-            state.tracked.has_baseline = false;
         }
     }
 
@@ -318,47 +302,6 @@ mod tests {
     }
 
     #[test]
-    fn reset_entry_makes_next_update_baseline() {
-        let mut state = State::<slotmap::DefaultKey, ()>::new();
-        let inbox = state.insert(());
-        state.process_unread_update(inbox, 5);
-        state.reset_entry(inbox);
-
-        // After reset the next update is a baseline again — no new_mail.
-        let effects = state.process_unread_update(inbox, 10);
-        assert!(!effects.new_mail);
-        // But total DID change (5 → 10).
-        assert_eq!(effects.total_unread_changed, Some(10));
-
-        // A subsequent increase fires.
-        let effects = state.process_unread_update(inbox, 11);
-        assert!(effects.new_mail);
-    }
-
-    #[test]
-    fn reset_entry_preserves_total() {
-        let mut state = State::<slotmap::DefaultKey, ()>::new();
-        let inbox = state.insert(());
-        state.process_unread_update(inbox, 5);
-
-        // Reset doesn't change total — count is preserved.
-        state.reset_entry(inbox);
-        assert_eq!(state.total_unread(), 5);
-    }
-
-    #[test]
-    fn reset_entry_preserves_entry() {
-        let mut state = State::<slotmap::DefaultKey, ()>::new();
-        let inbox = state.insert(());
-        state.process_unread_update(inbox, 5);
-        state.reset_entry(inbox);
-
-        // Entry is still tracked.
-        assert_eq!(state.entry_count(), 1);
-        assert_eq!(state.get(inbox).map(|e| e.tracked().unread), Some(5));
-    }
-
-    #[test]
     fn unread_for_returns_current_count() {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let inbox = state.insert(());
@@ -391,11 +334,22 @@ mod tests {
     }
 
     #[test]
-    fn reconnect_baseline_does_not_fire_on_same_count() {
+    fn reconnect_fires_on_higher_count() {
         let mut state = State::<slotmap::DefaultKey, ()>::new();
         let inbox = state.insert(());
         state.process_unread_update(inbox, 5);
-        state.reset_entry(inbox);
+
+        // Reconnect reports a higher count — new_mail fires.
+        let effects = state.process_unread_update(inbox, 7);
+        assert!(effects.new_mail);
+        assert_eq!(effects.total_unread_changed, Some(7));
+    }
+
+    #[test]
+    fn reconnect_same_count_does_not_fire() {
+        let mut state = State::<slotmap::DefaultKey, ()>::new();
+        let inbox = state.insert(());
+        state.process_unread_update(inbox, 5);
 
         // Reconnect reports the same count — no new_mail, no total change.
         let effects = state.process_unread_update(inbox, 5);
