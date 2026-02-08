@@ -1,0 +1,11 @@
+[package]
+name = "action-exec"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+action-core = { workspace = true }
+action-exec-core = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["process"] }

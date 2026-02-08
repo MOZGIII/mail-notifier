@@ -3,6 +3,24 @@
 version = 4
 
 [[package]]
+name = "action-core"
+version = "0.1.0"
+
+[[package]]
+name = "action-exec"
+version = "0.1.0"
+dependencies = [
+ "action-core",
+ "action-exec-core",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "action-exec-core"
+version = "0.1.0"
+
+[[package]]
 name = "addr2line"
 version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
