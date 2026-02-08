@@ -45,7 +45,6 @@ pub struct Tracked {
 
 /// Combined entry: caller-supplied user data plus tracking state.
 ///
-/// Returned by [`State::get`], [`State::get_mut`], and [`State::iter`].
 /// The [`user_data`](Self::user_data) field is directly accessible; the
 /// tracking state is readable via [`tracked`](Self::tracked).  Internal
 /// fields are private so callers cannot corrupt the state machine.
@@ -132,31 +131,22 @@ impl<K: Key, UserData> State<K, UserData> {
         self.total_unread
     }
 
-    /// Number of tracked mailbox entries.
-    pub fn entry_count(&self) -> usize {
-        self.entries.len()
-    }
-
-    /// Look up an entry by key.
+    /// Read-only view of the tracked entries.
     ///
-    /// Returns the [`Entry`] which gives access to both the
-    /// caller-supplied [`user_data`](Entry::user_data) and the
-    /// [`tracked`](Entry::tracked) state in a single lookup.
-    pub fn get(&self, key: K) -> Option<&Entry<UserData>> {
-        self.entries.get(key)
+    /// Callers can use [`SlotMap::get`], [`SlotMap::iter`],
+    /// [`SlotMap::len`], etc. directly.  Mutation of the map itself
+    /// is not exposed — use [`get_entry_mut`](Self::get_entry_mut)
+    /// to modify an entry's [`user_data`](Entry::user_data).
+    pub fn entries(&self) -> &SlotMap<K, Entry<UserData>> {
+        &self.entries
     }
 
     /// Look up an entry by key, mutably.
     ///
     /// The caller may modify [`Entry::user_data`]; the tracking state
     /// remains controlled by the state machine.
-    pub fn get_mut(&mut self, key: K) -> Option<&mut Entry<UserData>> {
+    pub fn get_entry_mut(&mut self, key: K) -> Option<&mut Entry<UserData>> {
         self.entries.get_mut(key)
-    }
-
-    /// Iterate over all entries, yielding `(key, &entry)`.
-    pub fn iter(&self) -> impl Iterator<Item = (K, &Entry<UserData>)> {
-        self.entries.iter()
     }
 }
 

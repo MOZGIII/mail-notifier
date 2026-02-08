@@ -154,7 +154,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                 }
                 tao::event::Event::UserEvent(UserEvent::Menu(event)) => {
                     if let Ok(key) = event.id.try_into()
-                        && let Some(entry) = state.get(key)
+                        && let Some(entry) = state.entries().get(key)
                     {
                         tracing::info!("Menu item clicked: {}", entry.user_data.name);
 

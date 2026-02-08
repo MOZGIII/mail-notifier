@@ -116,20 +116,26 @@ fn unread_for_returns_current_count() {
     let mut state = State::<slotmap::DefaultKey, ()>::new();
     let inbox = state.insert(());
     // Freshly inserted — no updates yet.
-    assert_eq!(state.get(inbox).map(|e| e.tracked().unread), Some(None));
+    assert_eq!(
+        state.entries().get(inbox).map(|e| e.tracked().unread),
+        Some(None)
+    );
 
     state.process_update(inbox).unwrap().workload(&Payload(5));
-    assert_eq!(state.get(inbox).map(|e| e.tracked().unread), Some(Some(5)));
+    assert_eq!(
+        state.entries().get(inbox).map(|e| e.tracked().unread),
+        Some(Some(5))
+    );
 }
 
 #[test]
 fn entry_count_tracks_entries() {
     let mut state = State::<slotmap::DefaultKey, ()>::new();
-    assert_eq!(state.entry_count(), 0);
+    assert_eq!(state.entries().len(), 0);
 
     state.insert(());
     state.insert(());
-    assert_eq!(state.entry_count(), 2);
+    assert_eq!(state.entries().len(), 2);
 }
 
 #[test]
@@ -171,18 +177,21 @@ fn reconnect_same_count_does_not_fire() {
 fn get_returns_stored_value() {
     let mut state = State::<slotmap::DefaultKey, &str>::new();
     let inbox = state.insert("inbox");
-    assert_eq!(state.get(inbox).map(|e| &e.user_data), Some(&"inbox"));
+    assert_eq!(
+        state.entries().get(inbox).map(|e| &e.user_data),
+        Some(&"inbox")
+    );
 }
 
 #[test]
 fn get_mut_modifies_stored_value() {
     let mut state = State::<slotmap::DefaultKey, String>::new();
     let inbox = state.insert("inbox".to_owned());
-    if let Some(entry) = state.get_mut(inbox) {
+    if let Some(entry) = state.get_entry_mut(inbox) {
         entry.user_data.push_str("_modified");
     }
     assert_eq!(
-        state.get(inbox).map(|e| e.user_data.as_str()),
+        state.entries().get(inbox).map(|e| e.user_data.as_str()),
         Some("inbox_modified"),
     );
 }
@@ -196,6 +205,7 @@ fn iter_yields_all_entries() {
     state.process_update(b).unwrap().workload(&Payload(7));
 
     let items: Vec<(_, Option<u32>, &&str)> = state
+        .entries()
         .iter()
         .map(|(k, e)| (k, e.tracked().unread, &e.user_data))
         .collect();
@@ -208,13 +218,13 @@ fn iter_yields_all_entries() {
 fn process_supervisor_started_sets_active() {
     let mut state = State::<slotmap::DefaultKey, ()>::new();
     let inbox = state.insert(());
-    assert!(!state.get(inbox).unwrap().tracked().active);
+    assert!(!state.entries().get(inbox).unwrap().tracked().active);
 
     state
         .process_update(inbox)
         .unwrap()
         .supervisor(&SupervisorEvent::<core::convert::Infallible, ()>::Started);
-    assert!(state.get(inbox).unwrap().tracked().active);
+    assert!(state.entries().get(inbox).unwrap().tracked().active);
 }
 
 #[test]
@@ -226,7 +236,7 @@ fn process_supervisor_error_clears_active() {
         .process_update(inbox)
         .unwrap()
         .supervisor(&SupervisorEvent::<core::convert::Infallible, ()>::Started);
-    assert!(state.get(inbox).unwrap().tracked().active);
+    assert!(state.entries().get(inbox).unwrap().tracked().active);
 
     state
         .process_update(inbox)
@@ -235,7 +245,7 @@ fn process_supervisor_error_clears_active() {
             error: (),
             next_retry_in: std::time::Duration::ZERO,
         });
-    assert!(!state.get(inbox).unwrap().tracked().active);
+    assert!(!state.entries().get(inbox).unwrap().tracked().active);
 }
 
 #[test]
@@ -247,13 +257,13 @@ fn process_supervisor_done_clears_active() {
         .process_update(inbox)
         .unwrap()
         .supervisor(&SupervisorEvent::<(), ()>::Started);
-    assert!(state.get(inbox).unwrap().tracked().active);
+    assert!(state.entries().get(inbox).unwrap().tracked().active);
 
     state
         .process_update(inbox)
         .unwrap()
         .supervisor(&SupervisorEvent::<(), ()>::Done { value: () });
-    assert!(!state.get(inbox).unwrap().tracked().active);
+    assert!(!state.entries().get(inbox).unwrap().tracked().active);
 }
 
 #[test]
@@ -265,7 +275,7 @@ fn process_supervisor_panicked_clears_active() {
         .process_update(inbox)
         .unwrap()
         .supervisor(&SupervisorEvent::<(), ()>::Started);
-    assert!(state.get(inbox).unwrap().tracked().active);
+    assert!(state.entries().get(inbox).unwrap().tracked().active);
 
     state
         .process_update(inbox)
@@ -274,7 +284,7 @@ fn process_supervisor_panicked_clears_active() {
             panic_payload: Box::new("oops"),
             next_retry_in: std::time::Duration::ZERO,
         });
-    assert!(!state.get(inbox).unwrap().tracked().active);
+    assert!(!state.entries().get(inbox).unwrap().tracked().active);
 }
 
 #[test]
@@ -288,21 +298,30 @@ fn process_update_unknown_key_returns_none() {
 }
 
 #[test]
-fn get_unknown_key_returns_none() {
+fn entries_unknown_key_returns_none() {
     let state = State::<slotmap::DefaultKey, ()>::new();
-    assert!(state.get(slotmap::DefaultKey::default()).is_none());
+    assert!(
+        state
+            .entries()
+            .get(slotmap::DefaultKey::default())
+            .is_none()
+    );
 }
 
 #[test]
-fn get_mut_unknown_key_returns_none() {
+fn get_entry_mut_unknown_key_returns_none() {
     let mut state = State::<slotmap::DefaultKey, ()>::new();
-    assert!(state.get_mut(slotmap::DefaultKey::default()).is_none());
+    assert!(
+        state
+            .get_entry_mut(slotmap::DefaultKey::default())
+            .is_none()
+    );
 }
 
 #[test]
 fn empty_state_defaults() {
     let state = State::<slotmap::DefaultKey, ()>::new();
     assert_eq!(state.total_unread(), 0);
-    assert_eq!(state.entry_count(), 0);
-    assert_eq!(state.iter().count(), 0);
+    assert_eq!(state.entries().len(), 0);
+    assert_eq!(state.entries().iter().count(), 0);
 }
