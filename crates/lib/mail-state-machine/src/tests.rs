@@ -3,7 +3,7 @@ use super::*;
 /// Test payload carrying an unread count.
 struct Payload(u32);
 
-impl WorkloadPayload for Payload {
+impl core::WorkloadPayload for Payload {
     fn unread(&self) -> u32 {
         self.0
     }
@@ -223,7 +223,7 @@ fn process_supervisor_started_sets_active() {
     state
         .process_update(inbox)
         .unwrap()
-        .supervisor(&SupervisorEvent::<core::convert::Infallible, ()>::Started);
+        .supervisor(&SupervisorEvent::<::core::convert::Infallible, ()>::Started);
     assert!(state.entries().get(inbox).unwrap().tracked().active);
 }
 
@@ -235,13 +235,13 @@ fn process_supervisor_error_clears_active() {
     state
         .process_update(inbox)
         .unwrap()
-        .supervisor(&SupervisorEvent::<core::convert::Infallible, ()>::Started);
+        .supervisor(&SupervisorEvent::<::core::convert::Infallible, ()>::Started);
     assert!(state.entries().get(inbox).unwrap().tracked().active);
 
     state
         .process_update(inbox)
         .unwrap()
-        .supervisor(&SupervisorEvent::<core::convert::Infallible, ()>::Error {
+        .supervisor(&SupervisorEvent::<::core::convert::Infallible, ()>::Error {
             error: (),
             next_retry_in: std::time::Duration::ZERO,
         });
