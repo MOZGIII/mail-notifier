@@ -1,0 +1,22 @@
+servers:
+  - name: "test server"
+    host: "imap.example.com"
+    tls:
+      mode: implicit
+    login:
+      username: "user@example.com"
+      password: "secret"
+    mailboxes:
+      - name: "INBOX"
+
+events:
+  new_mail:
+    actions:
+      - exec:
+          command: "/usr/bin/notify-send"
+          args:
+            - "--urgency"
+            - "critical"
+            - "New mail!"
+          env:
+            DISPLAY: ":0"
