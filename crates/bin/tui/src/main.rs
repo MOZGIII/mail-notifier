@@ -118,12 +118,9 @@ async fn main() -> color_eyre::eyre::Result<()> {
 fn entry_views(
     state: &mail_state_machine::State<slotmap::DefaultKey, EntryState>,
 ) -> impl Iterator<Item = tui_view::EntryView<'_>> {
-    state
-        .entries()
-        .iter()
-        .map(|(_key, entry)| tui_view::EntryView {
-            name: &entry.user_data.name,
-            active: entry.tracked().active,
-            unread: entry.tracked().unread.unwrap_or(0),
-        })
+    state.entries().values().map(|entry| tui_view::EntryView {
+        name: &entry.user_data.name,
+        active: entry.tracked().active,
+        unread: entry.tracked().unread.unwrap_or(0),
+    })
 }
