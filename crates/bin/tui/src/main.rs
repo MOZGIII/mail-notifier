@@ -108,7 +108,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
                     supervisor::SupervisorEvent::Error { .. }
                         | supervisor::SupervisorEvent::Panicked { .. }
                 ) {
-                    mail_state.reset_entry(&update.entry);
+                    mail_state.reset_entry(update.entry);
                 }
 
                 tui_view::render(&mut terminal, entry_views(&entries, &mail_state))?;
@@ -136,6 +136,6 @@ fn entry_views<'a>(
     entries.iter().map(move |(key, entry)| tui_view::EntryView {
         name: &entry.name,
         active: entry.active,
-        unread: mail_state.unread_for(&key).unwrap_or(0),
+        unread: mail_state.unread_for(key).unwrap_or(0),
     })
 }

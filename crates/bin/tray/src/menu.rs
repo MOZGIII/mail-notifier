@@ -23,7 +23,7 @@ pub fn build_menu(
 ) -> Menu {
     let menu = Menu::new();
     for (key, entry) in entries.iter() {
-        let unread = mail_state.unread_for(&key).unwrap_or(0);
+        let unread = mail_state.unread_for(key).unwrap_or(0);
         let text = if entry.active {
             format!("{}: {unread} unread", entry.name)
         } else {

@@ -152,7 +152,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                         supervisor::SupervisorEvent::Error { .. }
                             | supervisor::SupervisorEvent::Panicked { .. }
                     ) {
-                        mail_state.reset_entry(&update.entry);
+                        mail_state.reset_entry(update.entry);
                     }
                     update_tray_menu(&mut tray_icon, &entries, &mail_state);
                 }

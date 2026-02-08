@@ -3069,6 +3069,9 @@ dependencies = [
 [[package]]
 name = "mail-state-machine"
 version = "0.1.0"
+dependencies = [
+ "slotmap",
+]
 
 [[package]]
 name = "matchit"
