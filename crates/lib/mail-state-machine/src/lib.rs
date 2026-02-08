@@ -79,15 +79,22 @@ pub struct State<K: Key, UserData> {
     /// Tracked entries.
     entries: SlotMap<K, Entry<UserData>>,
 
-    /// Cached total unread count across all tracked entries.
-    total_unread: u32,
+    /// Aggregated counters.
+    totals: Totals,
+}
+
+/// Aggregated counters across all tracked entries.
+#[derive(Debug, Default)]
+pub struct Totals {
+    /// Cached total unread count.
+    pub unread: u32,
 }
 
 impl<K: Key, UserData> Default for State<K, UserData> {
     fn default() -> Self {
         Self {
             entries: SlotMap::with_key(),
-            total_unread: 0,
+            totals: Totals::default(),
         }
     }
 }
@@ -124,13 +131,13 @@ impl<K: Key, UserData> State<K, UserData> {
         let entry = self.entries.get_mut(key)?;
         Some(UpdateProcessor {
             entry,
-            total_unread: &mut self.total_unread,
+            totals: &mut self.totals,
         })
     }
 
     /// Total unread count across all tracked mailboxes.
-    pub fn total_unread(&self) -> u32 {
-        self.total_unread
+    pub fn totals(&self) -> &Totals {
+        &self.totals
     }
 
     /// Read-only view of the tracked entries.
@@ -161,8 +168,8 @@ pub struct UpdateProcessor<'a, UserData> {
     /// The entry being updated.
     entry: &'a mut Entry<UserData>,
 
-    /// Shared total-unread counter.
-    total_unread: &'a mut u32,
+    /// Shared aggregated counters.
+    totals: &'a mut Totals,
 }
 
 impl<UserData> UpdateProcessor<'_, UserData> {
@@ -177,11 +184,11 @@ impl<UserData> UpdateProcessor<'_, UserData> {
     ///   [`Some(new_total)`] when the global total changed.
     pub fn workload(&mut self, payload: &impl HasUnread) -> WorkloadEffects {
         let unread = payload.unread();
-        let old_total = *self.total_unread;
+        let old_total = self.totals.unread;
         let mut new_mail = false;
 
         let prev = self.entry.tracked.unread.unwrap_or(0);
-        *self.total_unread = *self.total_unread - prev + unread;
+        self.totals.unread = self.totals.unread - prev + unread;
         if let Some(old) = self.entry.tracked.unread
             && unread > old
         {
@@ -189,8 +196,8 @@ impl<UserData> UpdateProcessor<'_, UserData> {
         }
         self.entry.tracked.unread = Some(unread);
 
-        let total_unread_changed = if *self.total_unread != old_total {
-            Some(*self.total_unread)
+        let total_unread_changed = if self.totals.unread != old_total {
+            Some(self.totals.unread)
         } else {
             None
         };

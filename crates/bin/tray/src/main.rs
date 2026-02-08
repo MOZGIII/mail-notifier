@@ -126,7 +126,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                             .build()
                             .unwrap(),
                     );
-                    let _ = new_icon_text_sender.blocking_send(state.total_unread().to_string());
+                    let _ = new_icon_text_sender.blocking_send(state.totals().unread.to_string());
                 }
                 tao::event::Event::UserEvent(UserEvent::WorkloadUpdate(update)) => {
                     if let Some(mut proc) = state.process_update(update.entry) {

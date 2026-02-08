@@ -108,7 +108,7 @@ fn total_unread_sums_all() {
     state.process_update(a).unwrap().workload(&Payload(3));
     state.process_update(b).unwrap().workload(&Payload(7));
 
-    assert_eq!(state.total_unread(), 10);
+    assert_eq!(state.totals().unread, 10);
 }
 
 #[test]
@@ -321,7 +321,7 @@ fn get_entry_mut_unknown_key_returns_none() {
 #[test]
 fn empty_state_defaults() {
     let state = State::<slotmap::DefaultKey, ()>::new();
-    assert_eq!(state.total_unread(), 0);
+    assert_eq!(state.totals().unread, 0);
     assert_eq!(state.entries().len(), 0);
     assert_eq!(state.entries().iter().count(), 0);
 }
