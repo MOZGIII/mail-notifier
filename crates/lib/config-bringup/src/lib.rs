@@ -35,6 +35,27 @@ pub fn init_keyring_if_needed(
     keyring_bridge::KeyringGuard::init_default().map(Some)
 }
 
+/// Bringup the actions engine from the event handler configuration.
+pub fn actions_engine(events: Option<&config_core::Events>) -> actions_engine::Engine {
+    let Some(events) = events else {
+        return actions_engine::Engine::default();
+    };
+
+    let new_mail_actions = events
+        .new_mail
+        .as_ref()
+        .map(|new_mail| {
+            new_mail
+                .actions
+                .iter()
+                .map(internal::new_mail_action)
+                .collect()
+        })
+        .unwrap_or_default();
+
+    actions_engine::Engine { new_mail_actions }
+}
+
 /// Bringup the full config for monitoring purposes.
 pub async fn for_monitoring(
     core_config: &config_core::Config,

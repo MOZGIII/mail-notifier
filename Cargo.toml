@@ -6,6 +6,7 @@ members = ["crates/*/*"]
 action-core = { path = "crates/lib/action-core" }
 action-exec = { path = "crates/lib/action-exec" }
 action-exec-core = { path = "crates/lib/action-exec-core" }
+actions-engine = { path = "crates/lib/actions-engine" }
 axum-redirect-receiver = { path = "crates/lib/axum-redirect-receiver" }
 config-bringup = { path = "crates/lib/config-bringup" }
 config-core = { path = "crates/lib/config-core" }
