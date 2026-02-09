@@ -37,6 +37,7 @@ fn test_basic_config_parsing() {
     let expected = Config {
         servers: vec![base_server()],
         oauth2_clients: Default::default(),
+        events: None,
     };
 
     assert_eq!(config, expected);
@@ -56,6 +57,7 @@ fn test_oauth2_config_parsing() {
             ..base_server()
         }],
         oauth2_clients: Default::default(),
+        events: None,
     };
 
     assert_eq!(config, expected);
@@ -80,6 +82,7 @@ fn test_keyring_config_parsing() {
             ..base_server()
         }],
         oauth2_clients: Default::default(),
+        events: None,
     };
 
     assert_eq!(config, expected);
@@ -99,6 +102,7 @@ fn test_starttls_config_parsing() {
             ..base_server()
         }],
         oauth2_clients: Default::default(),
+        events: None,
     };
 
     assert_eq!(config, expected);
@@ -118,6 +122,7 @@ fn test_starttls_alias_config_parsing() {
             ..base_server()
         }],
         oauth2_clients: Default::default(),
+        events: None,
     };
 
     assert_eq!(config, expected);
@@ -134,6 +139,7 @@ fn test_idle_timeout_config_parsing() {
             ..base_server()
         }],
         oauth2_clients: Default::default(),
+        events: None,
     };
 
     assert_eq!(config, expected);
@@ -158,6 +164,57 @@ fn test_keyring_overrides_config_parsing() {
             ..base_server()
         }],
         oauth2_clients: Default::default(),
+        events: None,
+    };
+
+    assert_eq!(config, expected);
+}
+
+#[test]
+fn test_events_exec_full() {
+    let yaml = include_str!("fixtures/events_exec_full.yml");
+    let config = must_parse(yaml);
+
+    let expected = Config {
+        servers: vec![base_server()],
+        oauth2_clients: Default::default(),
+        events: Some(Events {
+            new_mail: Some(EventNewMail {
+                actions: vec![ActionAny::Exec(ActionExec {
+                    command: "/usr/bin/notify-send".to_string(),
+                    args: vec![
+                        "--urgency".to_string(),
+                        "critical".to_string(),
+                        "New mail!".to_string(),
+                    ],
+                    env: [("DISPLAY".to_string(), ":0".to_string())]
+                        .into_iter()
+                        .collect(),
+                })],
+            }),
+        }),
+    };
+
+    assert_eq!(config, expected);
+}
+
+#[test]
+fn test_events_exec_minimal() {
+    let yaml = include_str!("fixtures/events_exec_minimal.yml");
+    let config = must_parse(yaml);
+
+    let expected = Config {
+        servers: vec![base_server()],
+        oauth2_clients: Default::default(),
+        events: Some(Events {
+            new_mail: Some(EventNewMail {
+                actions: vec![ActionAny::Exec(ActionExec {
+                    command: "/usr/bin/notify-send".to_string(),
+                    args: Vec::new(),
+                    env: Default::default(),
+                })],
+            }),
+        }),
     };
 
     assert_eq!(config, expected);

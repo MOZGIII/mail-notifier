@@ -13,6 +13,10 @@ pub struct Config {
     /// OAuth 2 client configurations.
     #[cfg_attr(feature = "serde", serde(default))]
     pub oauth2_clients: std::collections::HashMap<String, OAuth2ClientConfig>,
+
+    /// Event handler configuration.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub events: Option<Events>,
 }
 
 /// A monitored IMAP server.
@@ -197,4 +201,48 @@ pub struct MailboxConfig {
 
     /// URL associated with this mailbox to view the mailbox status.
     pub view_url: Option<Arc<str>>,
+}
+
+/// Event handler configuration.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
+#[derive(Debug, Clone, PartialEq)]
+pub struct Events {
+    /// Actions to perform when new mail arrives.
+    pub new_mail: Option<EventNewMail>,
+}
+
+/// Configuration for the new-mail event.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
+#[derive(Debug, Clone, PartialEq)]
+pub struct EventNewMail {
+    /// Actions to perform when new mail arrives.
+    pub actions: Vec<ActionAny>,
+}
+
+/// An action to perform in response to an event.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
+#[derive(Debug, Clone, PartialEq)]
+pub enum ActionAny {
+    /// Spawn a process.
+    Exec(ActionExec),
+}
+
+/// A process-spawn action.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
+#[derive(Debug, Clone, PartialEq)]
+pub struct ActionExec {
+    /// Program to run.
+    pub command: String,
+
+    /// Arguments to pass to the program.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub args: Vec<String>,
+
+    /// Extra environment variables for the spawned process.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub env: std::collections::HashMap<String, String>,
 }

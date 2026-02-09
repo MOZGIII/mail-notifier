@@ -167,6 +167,19 @@ pub fn mailbox(
     }
 }
 
+/// Convert a config action into a runtime new-mail action.
+pub fn new_mail_action(action: &config_core::ActionAny) -> actions_engine::NewMailAction {
+    match action {
+        config_core::ActionAny::Exec(exec) => {
+            actions_engine::NewMailAction::Exec(action_exec::ExecAction {
+                command: exec.command.clone(),
+                args: exec.args.clone(),
+                env: exec.env.clone(),
+            })
+        }
+    }
+}
+
 /// Resolve the password from config, including keyring lookups.
 pub async fn resolve_password(
     credentials: &config_core::LoginCredentials,

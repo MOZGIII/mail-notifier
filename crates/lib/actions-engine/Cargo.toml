@@ -1,0 +1,12 @@
+[package]
+name = "actions-engine"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+action-core = { workspace = true }
+action-exec = { workspace = true }
+action-exec-core = { workspace = true }
+mail-state-machine = { workspace = true }
+tracing = { workspace = true }

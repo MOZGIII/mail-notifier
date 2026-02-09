@@ -18,6 +18,7 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
     let config = config_load::with_default_env_var().await?;
     let _keyring_guard = config_bringup::init_keyring_if_needed(&config)?;
     let mailboxes = config_bringup::for_monitoring(&config).await?;
+    let actions_engine = Arc::new(config_bringup::actions_engine(config.events.as_ref()));
     drop(config);
 
     let mut join_set = tokio::task::JoinSet::new();
@@ -131,12 +132,15 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                 tao::event::Event::UserEvent(UserEvent::WorkloadUpdate(update)) => {
                     if let Some(mut proc) = state.process_update(update.entry) {
                         let effects = proc.workload(&update.payload);
-                        if effects.new_mail {
-                            tracing::info!("new mail detected");
-                        }
+
                         if let Some(total) = effects.total_unread_changed {
                             let _ = new_icon_text_sender.blocking_send(total.to_string());
                         }
+
+                        tokio::spawn({
+                            let actions_engine = Arc::clone(&actions_engine);
+                            async move { actions_engine.process(&effects).await }
+                        });
                     }
                     update_tray_menu(&mut tray_icon, &state);
                 }

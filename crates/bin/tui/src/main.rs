@@ -17,6 +17,7 @@ async fn main() -> color_eyre::eyre::Result<()> {
     let config = config_load::with_default_env_var().await?;
     let _keyring_guard = config_bringup::init_keyring_if_needed(&config)?;
     let mailboxes = config_bringup::for_monitoring(&config).await?;
+    let actions_engine = Arc::new(config_bringup::actions_engine(config.events.as_ref()));
     drop(config);
 
     let mut join_set = tokio::task::JoinSet::new();
@@ -86,9 +87,10 @@ async fn main() -> color_eyre::eyre::Result<()> {
             Some(update) = mailbox_receiver.recv() => {
                 if let Some(mut proc) = state.process_update(update.entry) {
                     let effects = proc.workload(&update.payload);
-                    if effects.new_mail {
-                        tracing::info!("new mail detected");
-                    }
+                    tokio::spawn({
+                        let actions_engine = Arc::clone(&actions_engine);
+                        async move { actions_engine.process(&effects).await }
+                    });
                 }
 
                 tui_view::render(&mut terminal, entry_views(&state))?;

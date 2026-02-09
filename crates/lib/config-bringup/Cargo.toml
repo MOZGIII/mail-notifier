@@ -5,6 +5,8 @@ edition = "2024"
 publish = false
 
 [dependencies]
+action-exec = { workspace = true }
+actions-engine = { workspace = true }
 config-core = { workspace = true }
 imap-tls = { workspace = true }
 imap-utf7 = { workspace = true }
