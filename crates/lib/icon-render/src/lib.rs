@@ -50,42 +50,40 @@ pub fn render_text(
 
     let mut pixels = vec![255u8; (width * height * 4) as usize];
 
-    buffer.draw(
-        cache,
-        cosmic_text::Color::rgb(0, 0, 0),
-        |x, y, w, h, color| {
-            let x = x as usize;
-            let y = y as usize;
-            let w = w as usize;
-            let h = h as usize;
+    let text_color = cosmic_text::Color::rgb(0, 0, 0);
 
-            let [r, g, b, a] = color.as_rgba();
+    buffer.draw(cache, text_color, |x, y, w, h, color| {
+        let x = x as usize;
+        let y = y as usize;
+        let w = w as usize;
+        let h = h as usize;
 
-            let neg_a = 255u32 - a as u32;
+        let [r, g, b, a] = color.as_rgba();
 
-            let apply_a_prepass = |background| ((background as u32 * neg_a) / 255) as u8;
+        let neg_a = 255u32 - a as u32;
 
-            for gy in 0..h {
-                for gx in 0..w {
-                    let px = x + gx;
-                    let py = y + gy;
-                    if px < width as usize && py < height as usize {
-                        let idx = (py * width as usize + px) * 4;
+        let apply_a_prepass = |background| ((background as u32 * neg_a) / 255) as u8;
 
-                        pixels[idx] = apply_a_prepass(pixels[idx]);
-                        pixels[idx + 1] = apply_a_prepass(pixels[idx + 1]);
-                        pixels[idx + 2] = apply_a_prepass(pixels[idx + 2]);
-                        pixels[idx + 3] = apply_a_prepass(pixels[idx + 3]);
+        for gy in 0..h {
+            for gx in 0..w {
+                let px = x + gx;
+                let py = y + gy;
+                if px < width as usize && py < height as usize {
+                    let idx = (py * width as usize + px) * 4;
 
-                        pixels[idx] += r; // R
-                        pixels[idx + 1] += g; // G
-                        pixels[idx + 2] += b; // B
-                        pixels[idx + 3] += a; // A
-                    }
+                    pixels[idx] = apply_a_prepass(pixels[idx]);
+                    pixels[idx + 1] = apply_a_prepass(pixels[idx + 1]);
+                    pixels[idx + 2] = apply_a_prepass(pixels[idx + 2]);
+                    pixels[idx + 3] = apply_a_prepass(pixels[idx + 3]);
+
+                    pixels[idx] += r; // R
+                    pixels[idx + 1] += g; // G
+                    pixels[idx + 2] += b; // B
+                    pixels[idx + 3] += a; // A
                 }
             }
-        },
-    );
+        }
+    });
 
     pixels.into_boxed_slice()
 }
