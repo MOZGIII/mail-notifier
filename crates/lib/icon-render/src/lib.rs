@@ -130,9 +130,14 @@ pub fn render_text(
 
         let [r, g, b, a] = color.as_rgba();
 
-        let neg_a = 255u32 - a as u32;
+        // cosmic_text provides non-premultiplied RGBA: the RGB channels
+        // carry the raw text colour and the alpha channel carries the glyph
+        // coverage.  We composite with standard alpha-over:
+        //   dst = dst * (1 − src_a) + src * src_a
+        let a32 = a as u32;
+        let neg_a = 255u32 - a32;
 
-        let apply_a_prepass = |background| ((background as u32 * neg_a) / 255) as u8;
+        let blend = |dst: u8, src: u8| ((dst as u32 * neg_a + src as u32 * a32) / 255) as u8;
 
         for gy in 0..h {
             for gx in 0..w {
@@ -141,15 +146,15 @@ pub fn render_text(
                 if px < width as usize && py < height as usize {
                     let idx = (py * width as usize + px) * 4;
 
-                    pixels[idx] = apply_a_prepass(pixels[idx]);
-                    pixels[idx + 1] = apply_a_prepass(pixels[idx + 1]);
-                    pixels[idx + 2] = apply_a_prepass(pixels[idx + 2]);
-                    pixels[idx + 3] = apply_a_prepass(pixels[idx + 3]);
-
-                    pixels[idx] += r; // R
-                    pixels[idx + 1] += g; // G
-                    pixels[idx + 2] += b; // B
-                    pixels[idx + 3] += a; // A
+                    pixels[idx] = blend(pixels[idx], r);
+                    pixels[idx + 1] = blend(pixels[idx + 1], g);
+                    pixels[idx + 2] = blend(pixels[idx + 2], b);
+                    // Keep alpha fully opaque: `a` controls how much
+                    // the RGB channels shift toward the text colour,
+                    // but the icon surface must stay opaque so the
+                    // desktop background doesn't bleed through
+                    // antialiased text edges.
+                    pixels[idx + 3] = blend(pixels[idx + 3], 255);
                 }
             }
         }
@@ -158,4 +163,96 @@ pub fn render_text(
     apply_rounded_corners(&mut pixels, width, height);
 
     pixels.into_boxed_slice()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn setup() -> (cosmic_text::FontSystem, cosmic_text::SwashCache) {
+        let mut font_system = cosmic_text::FontSystem::new();
+        let cache = cosmic_text::SwashCache::new();
+        load_font(font_system.db_mut());
+        (font_system, cache)
+    }
+
+    /// Helper: get the RGBA tuple at pixel (x, y).
+    fn pixel_at(pixels: &[u8], width: u32, x: u32, y: u32) -> [u8; 4] {
+        let idx = (y * width + x) as usize * 4;
+        [
+            pixels[idx],
+            pixels[idx + 1],
+            pixels[idx + 2],
+            pixels[idx + 3],
+        ]
+    }
+
+    #[test]
+    fn corner_pixels_are_transparent() {
+        let (mut fs, mut cache) = setup();
+        let pixels = render_text("1", &mut fs, &mut cache, 32, 32, false);
+        // (0,0) is in the rounded-off corner.
+        let [_, _, _, a] = pixel_at(&pixels, 32, 0, 0);
+        assert_eq!(a, 0, "top-left corner pixel should be transparent");
+    }
+
+    #[test]
+    fn background_pixels_are_opaque_white_without_attention() {
+        let (mut fs, mut cache) = setup();
+        let pixels = render_text("1", &mut fs, &mut cache, 32, 32, false);
+        // A pixel on the top edge, centred horizontally, should be inside
+        // the rounded rect but far from any glyph.
+        let [r, g, b, a] = pixel_at(&pixels, 32, 16, 1);
+        assert_eq!(a, 255, "non-corner pixel should be opaque");
+        assert_eq!([r, g, b], [255, 255, 255], "background should be white");
+    }
+
+    #[test]
+    fn background_pixels_are_opaque_red_with_attention() {
+        let (mut fs, mut cache) = setup();
+        let pixels = render_text("1", &mut fs, &mut cache, 32, 32, true);
+        let [r, g, b, a] = pixel_at(&pixels, 32, 16, 1);
+        assert_eq!(a, 255, "non-corner pixel should be opaque");
+        assert_eq!([r, g, b], [220, 38, 38], "background should be red");
+    }
+
+    #[test]
+    fn text_pixels_are_darker_than_white_background() {
+        let (mut fs, mut cache) = setup();
+        let pixels = render_text("1", &mut fs, &mut cache, 32, 32, false);
+        // At least one pixel in the centre region should have been darkened
+        // by the black text.
+        let has_text = (12..20).any(|y| {
+            (10..22).any(|x| {
+                let [r, _, _, a] = pixel_at(&pixels, 32, x, y);
+                a == 255 && r < 200
+            })
+        });
+        assert!(has_text, "some centre pixels should be darkened by text");
+    }
+
+    #[test]
+    fn attention_text_pixels_are_lighter_than_red_background() {
+        let (mut fs, mut cache) = setup();
+        let pixels = render_text("1", &mut fs, &mut cache, 32, 32, true);
+        // With white-on-red, any text pixel should have channels
+        // moving *toward* white (i.e. R ≥ 220, G ≥ 38, B ≥ 38).
+        // If compositing is broken (overflow wrapping) some channels will
+        // be *less* than the background.
+        let has_bad_pixel = (8..24).any(|y| {
+            (8..24).any(|x| {
+                let [r, g, b, a] = pixel_at(&pixels, 32, x, y);
+                // Only check opaque, non-background pixels.
+                if a != 255 || (r == 220 && g == 38 && b == 38) {
+                    return false;
+                }
+                r < 220 || g < 38 || b < 38
+            })
+        });
+        assert!(
+            !has_bad_pixel,
+            "white text on red should never produce channels below the background value \
+             (would indicate overflow in alpha compositing)"
+        );
+    }
 }
