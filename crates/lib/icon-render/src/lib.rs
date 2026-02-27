@@ -9,13 +9,65 @@ pub fn load_font(db: &mut cosmic_text::fontdb::Database) {
     db.load_font_data(FONT_DATA.to_vec());
 }
 
-/// Renders text on a white background as an RGBA image.
+/// Returns `true` if the pixel at `(px, py)` lies inside a rounded rectangle
+/// of the given `width`×`height` with corner `radius`.
+fn inside_rounded_rect(px: u32, py: u32, width: u32, height: u32, radius: u32) -> bool {
+    let r = radius as f32;
+    let w = width as f32;
+    let h = height as f32;
+    let x = px as f32 + 0.5;
+    let y = py as f32 + 0.5;
+
+    // Check if the pixel is in one of the four corner regions.
+    let (cx, cy) = if x < r && y < r {
+        (r, r) // top-left
+    } else if x >= w - r && y < r {
+        (w - r, r) // top-right
+    } else if x < r && y >= h - r {
+        (r, h - r) // bottom-left
+    } else if x >= w - r && y >= h - r {
+        (w - r, h - r) // bottom-right
+    } else {
+        return true; // not in a corner region
+    };
+
+    let dx = x - cx;
+    let dy = y - cy;
+    dx * dx + dy * dy <= r * r
+}
+
+/// Applies a rounded-corner mask in-place on an RGBA pixel buffer:
+/// pixels outside the rounded rectangle become fully transparent.
+fn apply_rounded_corners(pixels: &mut [u8], width: u32, height: u32) {
+    let radius = width.min(height) / 5;
+    for py in 0..height {
+        for px in 0..width {
+            if !inside_rounded_rect(px, py, width, height, radius) {
+                let idx = (py * width + px) as usize * 4;
+                pixels[idx] = 0;
+                pixels[idx + 1] = 0;
+                pixels[idx + 2] = 0;
+                pixels[idx + 3] = 0;
+            }
+        }
+    }
+}
+
+/// Renders text on an icon image as RGBA pixels.
+///
+/// When `attention` is `true` the background is red and the text is white,
+/// signalling elevated attention. Otherwise the background is white with
+/// black text.
+///
+/// The resulting image has rounded corners (transparent outside the
+/// rounded rectangle).
 pub fn render_text(
     text: &str,
     font_system: &mut cosmic_text::FontSystem,
     cache: &mut cosmic_text::SwashCache,
     width: u32,
     height: u32,
+    attention: bool,
 ) -> Box<[u8]> {
     let len = text.len();
     let scale = if len <= 2 {
@@ -48,9 +100,27 @@ pub fn render_text(
     );
     buffer.shape_until_scroll(false);
 
-    let mut pixels = vec![255u8; (width * height * 4) as usize];
+    // Background colour: red for attention, white otherwise.
+    let (bg_r, bg_g, bg_b): (u8, u8, u8) = if attention {
+        (220, 38, 38)
+    } else {
+        (255, 255, 255)
+    };
 
-    let text_color = cosmic_text::Color::rgb(0, 0, 0);
+    let mut pixels = vec![0u8; (width * height * 4) as usize];
+    for chunk in pixels.chunks_exact_mut(4) {
+        chunk[0] = bg_r;
+        chunk[1] = bg_g;
+        chunk[2] = bg_b;
+        chunk[3] = 255;
+    }
+
+    // Text colour: white on red background, black on white background.
+    let text_color = if attention {
+        cosmic_text::Color::rgb(255, 255, 255)
+    } else {
+        cosmic_text::Color::rgb(0, 0, 0)
+    };
 
     buffer.draw(cache, text_color, |x, y, w, h, color| {
         let x = x as usize;
@@ -84,6 +154,8 @@ pub fn render_text(
             }
         }
     });
+
+    apply_rounded_corners(&mut pixels, width, height);
 
     pixels.into_boxed_slice()
 }
