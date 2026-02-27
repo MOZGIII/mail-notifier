@@ -4,8 +4,15 @@ mod data;
 
 pub use data::Data;
 
-/// A render task containing the text to render.
-pub type Task = String;
+/// A render task describing what to render.
+pub struct Task {
+    /// The text to display on the icon.
+    pub text: String,
+
+    /// When `true`, the icon is rendered with a red background to signal
+    /// elevated attention.
+    pub attention: bool,
+}
 
 /// Parameters for the render loop.
 pub struct Params<RenderTaskReceiver, RenderedDataSender> {
@@ -22,7 +29,8 @@ pub struct Params<RenderTaskReceiver, RenderedDataSender> {
     pub rendered_data_sender: RenderedDataSender,
 }
 
-/// Run a blocking render loop that
+/// Run a blocking render loop that receives [`Task`]s and produces rendered
+/// icon [`Data`].
 pub fn run<RenderTaskReceiver, RenderedDataSender>(
     params: Params<RenderTaskReceiver, RenderedDataSender>,
 ) where
@@ -45,7 +53,14 @@ pub fn run<RenderTaskReceiver, RenderedDataSender>(
             break;
         };
 
-        let pixels = icon_render::render_text(&task, &mut font_system, &mut cache, width, height);
+        let pixels = icon_render::render_text(
+            &task.text,
+            &mut font_system,
+            &mut cache,
+            width,
+            height,
+            task.attention,
+        );
 
         let data = data::Data {
             pixels,

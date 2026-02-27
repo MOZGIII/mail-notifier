@@ -127,14 +127,21 @@ async fn main() -> color_eyre::eyre::Result<core::convert::Infallible> {
                             .build()
                             .unwrap(),
                     );
-                    let _ = new_icon_text_sender.blocking_send(state.totals().unread.to_string());
+                    let unread = state.totals().unread;
+                    let _ = new_icon_text_sender.blocking_send(icon_render_loop::Task {
+                        text: unread.to_string(),
+                        attention: unread > 0,
+                    });
                 }
                 tao::event::Event::UserEvent(UserEvent::WorkloadUpdate(update)) => {
                     if let Some(mut proc) = state.process_update(update.entry) {
                         let effects = proc.workload(&update.payload);
 
                         if let Some(total) = effects.total_unread_changed {
-                            let _ = new_icon_text_sender.blocking_send(total.to_string());
+                            let _ = new_icon_text_sender.blocking_send(icon_render_loop::Task {
+                                text: total.to_string(),
+                                attention: total > 0,
+                            });
                         }
 
                         tokio::spawn({
