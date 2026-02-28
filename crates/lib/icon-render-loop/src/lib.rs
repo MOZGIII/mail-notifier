@@ -54,12 +54,14 @@ pub fn run<RenderTaskReceiver, RenderedDataSender>(
         };
 
         let pixels = icon_render::render_text(
-            &task.text,
+            &icon_render::RenderTextParams {
+                text: &task.text,
+                width,
+                height,
+                attention: task.attention,
+            },
             &mut font_system,
             &mut cache,
-            width,
-            height,
-            task.attention,
         );
 
         let data = data::Data {

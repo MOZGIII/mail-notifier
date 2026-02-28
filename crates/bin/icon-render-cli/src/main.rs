@@ -20,8 +20,16 @@ fn main() -> color_eyre::eyre::Result<()> {
 
     let mut cache = cosmic_text::SwashCache::new();
 
-    let rgba_data =
-        icon_render::render_text(text, &mut font_system, &mut cache, width, height, false);
+    let rgba_data = icon_render::render_text(
+        &icon_render::RenderTextParams {
+            text,
+            width,
+            height,
+            attention: false,
+        },
+        &mut font_system,
+        &mut cache,
+    );
 
     let img = image::RgbaImage::from_raw(width, height, rgba_data.into_vec())
         .ok_or_else(|| color_eyre::eyre::eyre!("Failed to create image from raw data"))?;

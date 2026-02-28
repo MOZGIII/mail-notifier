@@ -53,22 +53,37 @@ fn apply_rounded_corners(pixels: &mut [u8], width: u32, height: u32) {
     }
 }
 
+/// Parameters for [`render_text`].
+pub struct RenderTextParams<'a> {
+    /// The text to render on the icon.
+    pub text: &'a str,
+
+    /// The width of the output image in pixels.
+    pub width: u32,
+
+    /// The height of the output image in pixels.
+    pub height: u32,
+
+    /// When `true` the background is red and the text is white, signalling
+    /// elevated attention. Otherwise the background is white with black text.
+    pub attention: bool,
+}
+
 /// Renders text on an icon image as RGBA pixels.
-///
-/// When `attention` is `true` the background is red and the text is white,
-/// signalling elevated attention. Otherwise the background is white with
-/// black text.
 ///
 /// The resulting image has rounded corners (transparent outside the
 /// rounded rectangle).
 pub fn render_text(
-    text: &str,
+    params: &RenderTextParams<'_>,
     font_system: &mut cosmic_text::FontSystem,
     cache: &mut cosmic_text::SwashCache,
-    width: u32,
-    height: u32,
-    attention: bool,
 ) -> Box<[u8]> {
+    let RenderTextParams {
+        text,
+        width,
+        height,
+        attention,
+    } = *params;
     let len = text.len();
     let scale = if len <= 2 {
         0.6
@@ -190,7 +205,16 @@ mod tests {
     #[test]
     fn corner_pixels_are_transparent() {
         let (mut fs, mut cache) = setup();
-        let pixels = render_text("1", &mut fs, &mut cache, 32, 32, false);
+        let pixels = render_text(
+            &RenderTextParams {
+                text: "1",
+                width: 32,
+                height: 32,
+                attention: false,
+            },
+            &mut fs,
+            &mut cache,
+        );
         // (0,0) is in the rounded-off corner.
         let [_, _, _, a] = pixel_at(&pixels, 32, 0, 0);
         assert_eq!(a, 0, "top-left corner pixel should be transparent");
@@ -199,7 +223,16 @@ mod tests {
     #[test]
     fn background_pixels_are_opaque_white_without_attention() {
         let (mut fs, mut cache) = setup();
-        let pixels = render_text("1", &mut fs, &mut cache, 32, 32, false);
+        let pixels = render_text(
+            &RenderTextParams {
+                text: "1",
+                width: 32,
+                height: 32,
+                attention: false,
+            },
+            &mut fs,
+            &mut cache,
+        );
         // A pixel on the top edge, centred horizontally, should be inside
         // the rounded rect but far from any glyph.
         let [r, g, b, a] = pixel_at(&pixels, 32, 16, 1);
@@ -210,7 +243,16 @@ mod tests {
     #[test]
     fn background_pixels_are_opaque_red_with_attention() {
         let (mut fs, mut cache) = setup();
-        let pixels = render_text("1", &mut fs, &mut cache, 32, 32, true);
+        let pixels = render_text(
+            &RenderTextParams {
+                text: "1",
+                width: 32,
+                height: 32,
+                attention: true,
+            },
+            &mut fs,
+            &mut cache,
+        );
         let [r, g, b, a] = pixel_at(&pixels, 32, 16, 1);
         assert_eq!(a, 255, "non-corner pixel should be opaque");
         assert_eq!([r, g, b], [220, 38, 38], "background should be red");
@@ -219,7 +261,16 @@ mod tests {
     #[test]
     fn text_pixels_are_darker_than_white_background() {
         let (mut fs, mut cache) = setup();
-        let pixels = render_text("1", &mut fs, &mut cache, 32, 32, false);
+        let pixels = render_text(
+            &RenderTextParams {
+                text: "1",
+                width: 32,
+                height: 32,
+                attention: false,
+            },
+            &mut fs,
+            &mut cache,
+        );
         // At least one pixel in the centre region should have been darkened
         // by the black text.
         let has_text = (12..20).any(|y| {
@@ -234,7 +285,16 @@ mod tests {
     #[test]
     fn attention_text_pixels_are_lighter_than_red_background() {
         let (mut fs, mut cache) = setup();
-        let pixels = render_text("1", &mut fs, &mut cache, 32, 32, true);
+        let pixels = render_text(
+            &RenderTextParams {
+                text: "1",
+                width: 32,
+                height: 32,
+                attention: true,
+            },
+            &mut fs,
+            &mut cache,
+        );
         // With white-on-red, any text pixel should have channels
         // moving *toward* white (i.e. R ≥ 220, G ≥ 38, B ≥ 38).
         // If compositing is broken (overflow wrapping) some channels will
