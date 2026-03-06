@@ -21,7 +21,7 @@ jobs:
 
       - name: Docker meta for tui
         id: meta-tui
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           bake-target: docker-metadata-action-tui
           images: |
@@ -39,7 +39,7 @@ jobs:
 
       - name: Docker meta for cli
         id: meta-cli
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           bake-target: docker-metadata-action-cli
           images: |
