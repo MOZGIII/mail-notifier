@@ -48,11 +48,7 @@ pub fn run<RenderTaskReceiver, RenderedDataSender>(
 
     icon_render::load_font(font_system.db_mut());
 
-    loop {
-        let Some(task) = (render_task_receiver)() else {
-            break;
-        };
-
+    while let Some(task) = (render_task_receiver)() {
         let pixels = icon_render::render_text(
             &icon_render::RenderTextParams {
                 text: &task.text,

@@ -123,11 +123,8 @@ pub fn render_text(
     };
 
     let mut pixels = vec![0u8; (width * height * 4) as usize];
-    for chunk in pixels.chunks_exact_mut(4) {
-        chunk[0] = bg_r;
-        chunk[1] = bg_g;
-        chunk[2] = bg_b;
-        chunk[3] = 255;
+    for chunk in pixels.as_chunks_mut::<4>().0 {
+        *chunk = [bg_r, bg_g, bg_b, 255];
     }
 
     // Text colour: white on red background, black on white background.

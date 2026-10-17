@@ -47,7 +47,9 @@ async fn main() -> color_eyre::eyre::Result<()> {
 
     let oauth2_client = match oauth2_client.auth_uri().cloned() {
         Some(url) => oauth2_client.set_auth_uri(url),
-        None => bail!("No auth url for client '{oauth2_client_name}'",),
+        None => {
+            bail!("No auth url for client '{oauth2_client_name}'");
+        }
     };
 
     let (pkce_challenge, pkce_verifier) = oauth2::PkceCodeChallenge::new_random_sha256();
