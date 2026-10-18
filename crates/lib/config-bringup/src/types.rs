@@ -74,6 +74,9 @@ pub struct Mailbox {
     pub mailbox: imap_utf7::ImapUtf7String,
 
     /// Idle timeout.
+    ///
+    /// Bounds one IDLE round, and doubles as the poll interval on servers
+    /// without IDLE support.
     pub idle_timeout: std::time::Duration,
 
     /// A URL to navigate to in order to view this mailbox on the web.
