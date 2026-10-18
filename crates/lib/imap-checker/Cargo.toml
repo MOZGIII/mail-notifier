@@ -9,4 +9,8 @@ async-imap = { workspace = true }
 imap-utf7 = { workspace = true }
 mail-state-machine-core = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, features = ["io-util"] }
+tokio = { workspace = true, features = ["io-util", "time"] }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["io-util", "macros", "rt", "sync", "time"] }

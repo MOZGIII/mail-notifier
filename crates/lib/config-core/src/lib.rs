@@ -44,6 +44,9 @@ pub struct ServerConfig {
     pub mailboxes: Vec<MailboxConfig>,
 
     /// Idle timeout override for this server (seconds).
+    ///
+    /// Bounds one IDLE round, and doubles as the poll interval on servers
+    /// without IDLE support.
     pub idle_timeout_secs: Option<u64>,
 
     /// URL associated with this server to view the mailbox status.
@@ -197,6 +200,9 @@ pub struct MailboxConfig {
     pub name: String,
 
     /// Idle timeout override for this mailbox (seconds).
+    ///
+    /// Bounds one IDLE round, and doubles as the poll interval on servers
+    /// without IDLE support.
     pub idle_timeout_secs: Option<u64>,
 
     /// URL associated with this mailbox to view the mailbox status.
