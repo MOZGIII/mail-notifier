@@ -8,3 +8,6 @@ publish = false
 mail-state-machine-core = { workspace = true }
 slotmap = { workspace = true }
 supervisor = { workspace = true }
+
+[lints]
+workspace = true

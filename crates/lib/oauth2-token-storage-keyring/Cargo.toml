@@ -10,3 +10,6 @@ oauth2-token-storage-core = { workspace = true, features = ["serde"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["rt"] }
+
+[lints]
+workspace = true

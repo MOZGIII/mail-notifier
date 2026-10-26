@@ -10,3 +10,6 @@ action-exec = { workspace = true }
 action-exec-core = { workspace = true }
 mail-state-machine = { workspace = true }
 tracing = { workspace = true }
+
+[lints]
+workspace = true

@@ -10,3 +10,6 @@ cosmic-text = { workspace = true }
 envfury = { workspace = true }
 icon-render = { workspace = true }
 image = { workspace = true }
+
+[lints]
+workspace = true

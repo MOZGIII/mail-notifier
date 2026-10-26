@@ -19,3 +19,6 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 tui-crossterm-guard = { workspace = true }
 tui-view = { workspace = true }
+
+[lints]
+workspace = true

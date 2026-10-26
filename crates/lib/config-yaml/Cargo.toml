@@ -8,3 +8,6 @@ publish = false
 config-core = { workspace = true, features = ["serde"] }
 serde_path_to_error = { workspace = true }
 serde_yaml_bw = { workspace = true }
+
+[lints]
+workspace = true

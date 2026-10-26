@@ -7,3 +7,6 @@ publish = false
 [dependencies]
 exp-backoff = { workspace = true }
 futures-util = { workspace = true, features = ["std"] }
+
+[lints]
+workspace = true

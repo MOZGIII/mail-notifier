@@ -10,3 +10,6 @@ imap-checker = { workspace = true }
 imap-service = { workspace = true }
 monitoring-core = { workspace = true }
 tracing = { workspace = true }
+
+[lints]
+workspace = true

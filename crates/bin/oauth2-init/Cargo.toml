@@ -18,3 +18,6 @@ reqwest = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tracing-subscriber = { workspace = true }
 webbrowser = { workspace = true }
+
+[lints]
+workspace = true

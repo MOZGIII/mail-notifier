@@ -6,3 +6,6 @@ publish = false
 
 [dependencies]
 tokio = { workspace = true, features = ["net"] }
+
+[lints]
+workspace = true

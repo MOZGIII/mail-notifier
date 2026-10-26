@@ -7,3 +7,6 @@ publish = false
 [dependencies]
 dirs = { workspace = true }
 either = { workspace = true }
+
+[lints]
+workspace = true
