@@ -9,3 +9,6 @@ exp-backoff = { workspace = true }
 monitoring-core = { workspace = true }
 supervisor = { workspace = true }
 tokio = { workspace = true, features = ["rt"] }
+
+[lints]
+workspace = true

@@ -6,3 +6,6 @@ publish = false
 
 [dependencies]
 cosmic-text = { workspace = true }
+
+[lints]
+workspace = true

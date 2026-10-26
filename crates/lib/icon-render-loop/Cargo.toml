@@ -7,3 +7,6 @@ publish = false
 [dependencies]
 cosmic-text = { workspace = true }
 icon-render = { workspace = true }
+
+[lints]
+workspace = true

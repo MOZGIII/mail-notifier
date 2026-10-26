@@ -10,3 +10,6 @@ oauth2-token-storage-core = { workspace = true }
 reqwest = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+
+[lints]
+workspace = true

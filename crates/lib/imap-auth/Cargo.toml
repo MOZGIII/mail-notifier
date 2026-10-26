@@ -8,3 +8,6 @@ publish = false
 async-imap = { workspace = true }
 imap-connect = { workspace = true }
 thiserror = { workspace = true }
+
+[lints]
+workspace = true

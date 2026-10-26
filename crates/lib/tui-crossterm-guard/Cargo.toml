@@ -6,3 +6,6 @@ publish = false
 
 [dependencies]
 crossterm = { workspace = true }
+
+[lints]
+workspace = true

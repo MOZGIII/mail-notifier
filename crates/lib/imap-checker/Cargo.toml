@@ -14,3 +14,6 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["io-util", "macros", "rt", "sync", "time"] }
+
+[lints]
+workspace = true

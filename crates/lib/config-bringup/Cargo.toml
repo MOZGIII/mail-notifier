@@ -18,3 +18,6 @@ oauth2-token-storage-keyring = { workspace = true }
 reqwest = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
+
+[lints]
+workspace = true

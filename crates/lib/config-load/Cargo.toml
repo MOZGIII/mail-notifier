@@ -16,3 +16,6 @@ config-resolver = { workspace = true }
 config-yaml = { workspace = true }
 envfury = { workspace = true, optional = true }
 thiserror = { workspace = true }
+
+[lints]
+workspace = true
